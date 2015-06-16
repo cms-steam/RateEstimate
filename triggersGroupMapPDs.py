@@ -3,6 +3,8 @@ triggerList = []
 groupList = []
 twoGroupsList = []
 twoGroupsToString = {}
+twoPathsList = []
+twoPathsToString = {}
 groupToString = {}
 
 ## Triggers from the google doc

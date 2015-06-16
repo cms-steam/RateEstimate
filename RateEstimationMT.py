@@ -301,12 +301,15 @@ startGlobal = time.time() ## timinig stuff
 folder = '/scratch/sdonato/STEAM/Rate_74X/PU30BX50/HLTRates_74X_50ns_Phys14_newBtag_V9/'
 lumi =  5E33 # s-1cm-2
 log = 2 # use log=2
-multiprocess = 32       # number of processes
-pileupFilter = True    # use pile-up filter?
-pileupFilterGen = False    # use pile-up filter gen or L1?
-useEMEnriched = False    # use plain QCD mu-enriched samples (Pt30to170)?
-useMuEnriched = False    # use plain QCD EM-enriched samples (Pt30to170)?
-evalL1 = False          # evaluate L1 triggers?
+multiprocess = 32           # number of processes
+pileupFilter = True         # use pile-up filter?
+pileupFilterGen = False     # use pile-up filter gen or L1?
+useEMEnriched = False       # use plain QCD mu-enriched samples (Pt30to170)?
+useMuEnriched = False       # use plain QCD EM-enriched samples (Pt30to170)?
+evalHLTpaths = False        # evaluate HLT triggers rates?
+evalHLTgroups = False       # evaluate HLT triggers groups rates  ?
+evalHLTtwogroups = False    # evaluate the correlation on the HLT trigger groups rates?
+evalL1 = False              # evaluate L1 triggers rates?
 label = "rates_Hermine_V10"
 
 EM_cut = "(!HLT_BCToEFilter_v1 && HLT_EmFilter_v1)"
@@ -355,12 +358,12 @@ for dataset in datasetList:
 ## evaluate the total rate (and error) for triggers and groups
 for dataset in datasetList:
     for trigger in triggerAndGroupList:
-        if(
+        if
             (evalL1 and (trigger in L1List)) or
             (evalHLT and (trigger in HLTList)) or
             (evalHLTgroups and (trigger in groupList)) or
             (evalHLTtwogroups and (trigger in twoGroupsList)) or
-        ):
+        :
             rateTriggerTotal[trigger] += rateTriggerDataset[(dataset,trigger)]
             squaredErrorRateTriggerTotal[trigger] += squaredErrorRateTriggerDataset[(dataset,trigger)]
 
