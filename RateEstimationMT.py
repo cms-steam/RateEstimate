@@ -6,7 +6,7 @@ import sys
 from math import *
 from os import walk
 from os import mkdir
-from triggersGroupMapv21 import *
+from triggersGroupMapPDs import *
 from datasetCrossSectionsPhys14 import *
 
 from scipy.stats import binom
@@ -121,10 +121,14 @@ def writeMatrixRates(fileName,datasetList,rateTriggerDataset,rateTriggerTotal,tr
 
 def CompareGRunVsGoogleDoc(datasetList,triggerList,folder):
     dirpath=''
+    filenames=[]
     for dataset in datasetList:
         for (dirpath, dirnames, filenames) in walk(folder+'/'+dataset):
             if len(filenames)>0 and 'root' in filenames[0]: break
-
+    
+    if len(filenames) is 0:
+        raise ValueError('No file found in '+folder)
+    
     _file0 = ROOT.TFile.Open(dirpath+'/'+filenames[0])
     chain = ROOT.gDirectory.Get("HltTree")
 
@@ -236,7 +240,7 @@ def getEvents(filepath):
                 passedEventsMatrix_[groupName] = 0
 
             for twoGroupsName in twoGroupsList:
-                passedEventsMatrix_[groupName] = 0
+                passedEventsMatrix_[twoGroupsName] = 0
         
         return passedEventsMatrix_,totalEventsMatrix_
 
@@ -294,14 +298,14 @@ startGlobal = time.time() ## timinig stuff
 #folder = 'HLTRates_V5'
 #folder = '/gpfs/ddn/srm/cms/store/user/sdonato/HLTRates_V7/'
 #folder = '/gpfs/ddn/srm/cms/store/user/sdonato/HLTRates_74X_50ns_V7/'
-folder = 'HLTRates_74X_50ns_Phys14_newBtag_V9/'
+folder = '/scratch/sdonato/STEAM/Rate_74X/PU30BX50/HLTRates_74X_50ns_Phys14_newBtag_V9/'
 lumi =  5E33 # s-1cm-2
 log = 2 # use log=2
 multiprocess = 32       # number of processes
 pileupFilter = True    # use pile-up filter?
 pileupFilterGen = False    # use pile-up filter gen or L1?
-useEMEnriched = True    # use plain QCD mu-enriched samples (Pt30to170)?
-useMuEnriched = True    # use plain QCD EM-enriched samples (Pt30to170)?
+useEMEnriched = False    # use plain QCD mu-enriched samples (Pt30to170)?
+useMuEnriched = False    # use plain QCD EM-enriched samples (Pt30to170)?
 evalL1 = False          # evaluate L1 triggers?
 label = "rates_Hermine_V10"
 
@@ -351,8 +355,14 @@ for dataset in datasetList:
 ## evaluate the total rate (and error) for triggers and groups
 for dataset in datasetList:
     for trigger in triggerAndGroupList:
-        rateTriggerTotal[trigger] += rateTriggerDataset[(dataset,trigger)]
-        squaredErrorRateTriggerTotal[trigger] += squaredErrorRateTriggerDataset[(dataset,trigger)]
+        if(
+            (evalL1 and (trigger in L1List)) or
+            (evalHLT and (trigger in HLTList)) or
+            (evalHLTgroups and (trigger in groupList)) or
+            (evalHLTtwogroups and (trigger in twoGroupsList)) or
+        ):
+            rateTriggerTotal[trigger] += rateTriggerDataset[(dataset,trigger)]
+            squaredErrorRateTriggerTotal[trigger] += squaredErrorRateTriggerDataset[(dataset,trigger)]
 
 
 filename = 'Results/'
@@ -363,7 +373,6 @@ if pileupFilter:
 
 if useEMEnriched: filename += '_EMEn'
 if useMuEnriched: filename += '_MuEn'
-#if evalL1: filename += '.L1'
 
 try:
     mkdir("Results")
@@ -372,15 +381,15 @@ except:
 
 ## write files with events count
 if evalL1: writeMatrixEvents(filename+'_L1.matrixEvents.csv',datasetList,L1List,totalEventsMatrix,passedEventsMatrix,True)
-writeMatrixEvents(filename+'_matrixEvents.csv',datasetList,HLTList,totalEventsMatrix,passedEventsMatrix,True)
-writeMatrixEvents(filename+'_matrixEvents.groups.csv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix)
-writeMatrixEvents(filename+'_matrixEvents.twogroups.csv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
+if evalHLTpaths: writeMatrixEvents(filename+'_matrixEvents.csv',datasetList,HLTList,totalEventsMatrix,passedEventsMatrix,True)
+if evalHLTgroups: writeMatrixEvents(filename+'_matrixEvents.groups.csv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix)
+if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups.csv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
 
 ## write files with  trigger rates
 if evalL1:writeMatrixRates(filename+'_L1_matrixRates.csv',datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
-writeMatrixRates(filename+'_matrixRates.csv',datasetList,rateTriggerDataset,rateTriggerTotal,HLTList,True)
-writeMatrixRates(filename+'_matrixRates.groups.csv',datasetList,rateTriggerDataset,rateTriggerTotal,groupList)
-writeMatrixRates(filename+'_matrixRates.twogroups.csv',datasetList,rateTriggerDataset,rateTriggerTotal,twoGroupsList)
+if evalHLTpaths: writeMatrixRates(filename+'_matrixRates.csv',datasetList,rateTriggerDataset,rateTriggerTotal,HLTList,True)
+if evalHLTgroups: writeMatrixRates(filename+'_matrixRates.groups.csv',datasetList,rateTriggerDataset,rateTriggerTotal,groupList)
+if evalHLTtwogroups: writeMatrixRates(filename+'_matrixRates.twogroups.csv',datasetList,rateTriggerDataset,rateTriggerTotal,twoGroupsList)
 
 
 ## print timing
