@@ -239,7 +239,7 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
     if (not useEMEnriched) and isEMEnriched: skip = True
     
     ## apply PU filter
-    if pileupFilterL1 and ('QCD'in dirpath):
+    if pileupFilter and ('QCD'in dirpath):
         if pileupFilterGen: filterString += '&&HLT_RemovePileUpDominatedEventsGen_v1'
         else: filterString += '&&HLT_RemovePileUpDominatedEvents_v1'
     
@@ -322,7 +322,7 @@ folder = '/scratch/sdonato/STEAM/Rate_74X/TestNewNtuple/'
 lumi =  5E33 # s-1cm-2
 log = 2 # use log=2
 multiprocess = 1           # number of processes
-pileupFilterL1 = True         # use pile-up filter?
+pileupFilter = True         # use pile-up filter?
 pileupFilterGen = False     # use pile-up filter gen or L1?
 useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
@@ -355,8 +355,14 @@ print "Evaluate HLT triggers rates? ", evalHLTpaths
 #print "Evaluate HLT triggers shared rates? ", evalHLTtwopaths
 print "Evaluate HLT groups rates? ", evalHLTgroups
 print "Evaluate HLT groups shared rates? ", evalHLTtwogroups
-print "Pile-up filter based on L1 object (old): ", pileupFilterL1
-print "Pile-up filter based on pt-hat MC truth (new) : ", pileupFilterGen
+print "Pile-up filter: ",pileupFilter
+if pileupFilter:
+    print "Pile-up filter version: ",
+    if pileupFilterGen:
+        print "pt-hat MC truth (new)"
+    else:
+        print "leading L1 object (old)"
+
 print
 
 # load library for multiprocessing
@@ -404,7 +410,7 @@ filename = 'Results/'
 filename += label
 filename += "_"+triggerName
 filename += "_"+str(lumi).replace("+","")
-if pileupFilterL1:
+if pileupFilter:
     if pileupFilterGen:filename += '_PUfilterGen'
     else:filename += '_PUfilter'
 
