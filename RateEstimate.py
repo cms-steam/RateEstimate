@@ -313,12 +313,7 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
 startGlobal = time.time() ## timinig stuff
 
 ## use options:
-#folder = 'HLTRates_V6'
-#folder = 'HLTRates_V5'
-#folder = '/gpfs/ddn/srm/cms/store/user/sdonato/HLTRates_V7/'
-#folder = '/gpfs/ddn/srm/cms/store/user/sdonato/HLTRates_74X_50ns_V7/'
-#folder = '/scratch/sdonato/STEAM/Rate_74X/PU30BX50/HLTRates_74X_50ns_Phys14_newBtag_V9/'
-folder = '/scratch/sdonato/STEAM/Rate_74X/TestNewNtuple/'
+folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/testNtuple/'
 lumi =  5E33 # s-1cm-2
 log = 2 # use log=2
 multiprocess = 1           # number of processes
