@@ -6,8 +6,8 @@ import sys
 from math import *
 from os import walk
 from os import mkdir
-from triggersGroupMap/triggersGroupMap__frozen_2015_50ns_5e33_v2_1_HLT_V5 import *
-from datasetCrossSection/datasetCrossSectionsPhys14 import *
+from triggersGroupMap.triggersGroupMap__frozen_2015_50ns_5e33_v2p1_HLT_V5 import *
+from datasetCrossSections.datasetCrossSectionsPhys14 import *
 
 from scipy.stats import binom
 
