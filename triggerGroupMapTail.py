@@ -27,18 +27,34 @@ triggersToRemove = [
 
 triggersGroupMap = dict(triggersGroupMap.items() + triggersL1GroupMap.items())
 
+triggerList = []
+L1List = []
+HLTList = []
+#twoHLTsList = []
+groupList = []
+twoGroupsList = []
+getTriggerString = {}
+
+## Fill triggerList and groupList
 for trigger in triggersGroupMap.keys():
     if trigger[:-1] in triggersToRemove: continue
     if not (trigger in triggerList) : triggerList.append(trigger)
     for group in triggersGroupMap[trigger]:
         if not (group in groupList) : groupList.append(group)
 
+## Fill HLTList and L1List
+for trigger in triggerList:
+    if "HLT_" in trigger: HLTList.append(trigger)
+    elif "L1_" in trigger: L1List.append(trigger)
+
+## Fill getTriggerString get a map from trigger and group names to strings
 for trigger in triggerList:
     getTriggerString[trigger]=trigger
     for group in triggersGroupMap[trigger]:
         if group in getTriggerString.keys(): getTriggerString[group]+='||'+trigger
         else: getTriggerString[group]=trigger
 
+## Fill twoGroupsList and getTriggerString
 for group1 in groupList:
     for group2 in groupList:
         twoGroups = group1 + "-" + group2
@@ -47,9 +63,11 @@ for group1 in groupList:
             twoGroupsTrigger="("+(getTriggerString[group1])+")&&("+(getTriggerString[group2])+")"
             getTriggerString[twoGroups]=twoGroupsTrigger
 
-HLTList = []
-L1List = []
-for trigger in triggerList:
-    if "HLT_" in trigger: HLTList.append(trigger)
-    elif "L1_" in trigger: L1List.append(trigger)
-
+### Fill twoHLTsList and getTriggerString
+#for trigger1 in HLTList:
+#    for trigger2 in HLTList:
+#        twoHLTs = trigger1 + "-" + trigger2
+#        if not (twoHLTs in twoHLTsList):
+#            twoHLTsList.append(twoHLTs)
+#            twoHLTsTrigger="("+(getTriggerString[trigger1])+")&&("+(getTriggerString[trigger2])+")"
+#            getTriggerString[twoHLTs]=twoHLTsTrigger

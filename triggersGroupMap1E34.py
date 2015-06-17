@@ -2,6 +2,8 @@ triggerList = []
 groupList = []
 groupToString = {}
 
+triggerName = "Test1"
+
 ## Triggers from the google doc
 triggersGroupMap = {
     'HLT_AK4CaloJetsForMC_v2':['template'],

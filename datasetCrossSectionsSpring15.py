@@ -7,8 +7,7 @@ datasetList = [
 'QCD_Pt_170to300_TuneCUETP8M1_13TeV_pythia8',
 'QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8',
 'QCD_Pt_470to600_TuneCUETP8M1_13TeV_pythia8',
-#'QCD_Pt_600to800_TuneCUETP8M1_13TeV_pythia8',
-#'QCD_Pt_600to800_TuneCUETP8M1_13TeV_pythia8',
+'QCD_Pt_600to800_TuneCUETP8M1_13TeV_pythia8',
 #'QCD_Pt_800to1000_TuneCUETP8M1_13TeV_pythia8',
 #'QCD_Pt_1000to1400_TuneCUETP8M1_13TeV_pythia8',
 #'QCD_Pt_1400to1800_TuneCUETP8M1_13TeV_pythia8',
@@ -17,6 +16,10 @@ datasetList = [
 #'QCD_Pt_3200toInf_TuneCUETP8M1_13TeV_pythia8',
 
 'DYToLL_M_1_TuneCUETP8M1_13TeV_pythia8',
+'WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8',
+]
+
+datasetNegWeightList=[
 'WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8',
 ]
 
@@ -37,7 +40,6 @@ datasetAntiEMList= [
 'QCD_Pt_50to80_TuneCUETP8M1_13TeV_pythia8',
 'QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8',
 'QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8',
-
 'QCD_Pt-15to20_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8',
 'QCD_Pt-20to30_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8',
 'QCD_Pt-30to50_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8',
@@ -45,7 +47,6 @@ datasetAntiEMList= [
 'QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8',
 'QCD_Pt-120to170_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8',
 ]
-
 
 datasetEMEnrichedList = [
 'QCD_Pt-15to20_EMEnriched_TuneCUETP8M1_13TeV_pythia8',
@@ -72,11 +73,8 @@ xsectionDatasets ={
 'QCD_Pt_80to120_TuneCUETP8M1_13TeV_pythia8':2762530.,#3000114.3,
 'QCD_Pt_120to170_TuneCUETP8M1_13TeV_pythia8':471100.,#493200.,
 'QCD_Pt_170to300_TuneCUETP8M1_13TeV_pythia8':117276.,#120300.,
-
 'QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8':7823.,#7475.,
 'QCD_Pt_470to600_TuneCUETP8M1_13TeV_pythia8':648.2,#587.1,
-
-
 
 ## EM fraction evaluated using fraction "(!HLT_BCToEFilter_v1 && HLT_EmFilter_v1)" in plain QCD sample 
 'QCD_Pt-15to20_EMEnriched_TuneCUETP8M1_13TeV_pythia8':1279000000.0*0.001309,
@@ -95,6 +93,5 @@ xsectionDatasets ={
 'QCD_Pt-120to170_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8':477000.0*0.05208,
 
 'WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8':60290.,#16000.,
-
 'DYToLL_M_1_TuneCUETP8M1_13TeV_pythia8':6960,#6960.
 }

@@ -2,15 +2,23 @@
  # -*- coding: UTF-8 -*-
 
 ########## Configuration ##############################################
-#nameMenu = "dev_25ns_HLT"
-nameMenu = "dev_50ns_HLT"
-#linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1OGcjnJdkwh_ysNhnvf2jv-It2xruG5DpsDgMXNcc7d4/edit#gid=0"       #link to 25ns frozen menu (16/06/2015)
+### 50ns example ###
+nameMenu = "/frozen/2015/50ns_5e33/v2.1/HLT/V5"
 linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1xeifxX9oZUT47GDjyepvGgPPIzV333Txf8BD4FnHTyc/edit#gid=0"       #link to 50ns frozen menu (16/06/2015)
-#L1Triggers = "triggersGroupMap_L1Menu_Collisions2015_25nsStage1_v3.py"
 L1Triggers = "triggersGroupMap_L1Menu_Collisions2015_50nsGct_v3.py"
-download = True
+
+### 25ns example ###
+#nameMenu = "/frozen/2015/25ns14e33/v2.0/HLT/V1"
+#linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1OGcjnJdkwh_ysNhnvf2jv-It2xruG5DpsDgMXNcc7d4/edit#gid=0"       #link to 25ns frozen menu (16/06/2015)
+#L1Triggers = "triggersGroupMap_L1Menu_Collisions2015_25nsStage1_v3.py"
 ###################################################################
- 
+download = True
+
+nameMenu = nameMenu.replace("\\","_")
+nameMenu = nameMenu.replace("/","_")
+nameMenu = nameMenu.replace(" ","_")
+nameMenu = nameMenu.replace(".","_")
+
 def getGroups(groupString):
     groupString=groupString.replace(" ","")
     groupString=groupString.replace("(","")
@@ -95,12 +103,6 @@ comment = comment[:-1]
 fileOut.write("#"+comment)
 
 fileOut.write('\ntriggerList = []\n')
-fileOut.write('groupList = []\n')
-fileOut.write('twoGroupsList = []\n')
-fileOut.write('twoGroupsToString = {}\n')
-fileOut.write('twoPathsList = []\n')
-fileOut.write('twoPathsToString = {}\n')
-fileOut.write('getTriggerString = {}\n')
 fileOut.write('triggerName = "'+nameMenu+'"\n')
 fileOut.write('\n')
 fileOut.write("triggersGroupMap = ")

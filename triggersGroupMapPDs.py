@@ -5,7 +5,9 @@ twoGroupsList = []
 twoGroupsToString = {}
 twoPathsList = []
 twoPathsToString = {}
-groupToString = {}
+getTriggerString = {}
+
+triggerName = "Test1"
 
 ## Triggers from the google doc
 triggersGroupMap = {
@@ -527,10 +529,10 @@ triggersToRemove = [
 ]
 
 #groupList.append('All')
-#groupToString['All'] = '||'.join(triggersGroupMap.keys())
+#getTriggerString['All'] = '||'.join(triggersGroupMap.keys())
 
 #groupList.append('AllL1')
-#groupToString['AllL1'] = 'L1_DoubleEG6_HTT150||L1_DoubleEG_15_10||L1_DoubleEG_20_10_1LegIso||L1_DoubleEG_22_10||L1_DoubleIsoTau36er||L1_DoubleIsoTau40er||L1_DoubleIsoTau44er||L1_DoubleJetC100||L1_DoubleJetC112||L1_DoubleJetC120||L1_DoubleJetC32_WdPhi7_HTT125||L1_DoubleJetC52||L1_DoubleJetC56_ETM60||L1_DoubleJetC60_ETM60||L1_DoubleJetC84||L1_DoubleMu0||L1_DoubleMu0_Eta1p6_WdEta18||L1_DoubleMu0_Eta1p6_WdEta18_OS||L1_DoubleMu6_EG6||L1_DoubleMu7_EG7||L1_DoubleMu_10_0_WdEta18||L1_DoubleMu_10_3p5||L1_DoubleMu_10_Open||L1_DoubleMu_12_5||L1_DoubleTauJet40er||L1_EG25er_HTT125||L1_ETM100||L1_ETM30||L1_ETM40||L1_ETM50||L1_ETM60||L1_ETM60_NotJet52WdPhi2||L1_ETM70||L1_ETM70_NotJet52WdPhi2||L1_HTT110_rHTM0p6_rHTM0p0_WdPhi6||L1_HTT125||L1_HTT125_rHTM0p3||L1_HTT150||L1_HTT175||L1_HTT200||L1_HTT250||L1_IsoEG20er_TauJet20er_NotWdEta0||L1_Jet32_DoubleMu_Open_10_MuMuNotWdPhi23_JetMuWdPhi1||L1_Jet32_MuOpen_EG10_MuEGNotWdPhi3_JetMuWdPhi1||L1_Mu0er_ETM55||L1_Mu10er_ETM50||L1_Mu12_EG10||L1_Mu14er_ETM30||L1_Mu16er_IsoTau36er||L1_Mu16er_TauJet20er||L1_Mu20_EG10||L1_Mu20_EG8||L1_Mu3_JetC16_WdEtaPhi2||L1_Mu3_JetC52_WdEtaPhi2||L1_Mu3_JetC92_WdEtaPhi2||L1_Mu4_EG18||L1_Mu5_DoubleEG5||L1_Mu5_EG15||L1_Mu5_EG20||L1_Mu5_IsoEG18||L1_Mu6_DoubleEG10||L1_Mu6_HTT150||L1_Mu8_HTT125||L1_QuadJetC36_TauJet52||L1_QuadJetC40||L1_QuadJetC60||L1_QuadJetC84||L1_QuadMu0||L1_SingleEG10||L1_SingleEG20||L1_SingleEG25||L1_SingleEG30||L1_SingleEG35||L1_SingleEG40||L1_SingleEG5||L1_SingleIsoEG18||L1_SingleIsoEG20er||L1_SingleIsoEG22er||L1_SingleIsoEG25||L1_SingleIsoEG25er||L1_SingleIsoEG28er||L1_SingleIsoEG30er||L1_SingleJet128||L1_SingleJet176||L1_SingleJet200||L1_SingleJet240||L1_SingleJet36||L1_SingleJet52||L1_SingleJet68||L1_SingleJet92||L1_SingleJetC20_NotBptxOR||L1_SingleJetC32_NotBptxOR||L1_SingleMu12||L1_SingleMu14er||L1_SingleMu16||L1_SingleMu16er||L1_SingleMu18er||L1_SingleMu20||L1_SingleMu20er||L1_SingleMu25||L1_SingleMu25er||L1_SingleMu30||L1_SingleMu30er||L1_SingleMu5||L1_SingleMu6_NotBptxOR||L1_SingleMuBeamHalo||L1_SingleMuOpen||L1_TripleEG_14_10_8||L1_TripleJet_92_76_64_VBF||L1_TripleMu0||L1_TripleMu_5_5_3||L1_ZeroBias'
+#getTriggerString['AllL1'] = 'L1_DoubleEG6_HTT150||L1_DoubleEG_15_10||L1_DoubleEG_20_10_1LegIso||L1_DoubleEG_22_10||L1_DoubleIsoTau36er||L1_DoubleIsoTau40er||L1_DoubleIsoTau44er||L1_DoubleJetC100||L1_DoubleJetC112||L1_DoubleJetC120||L1_DoubleJetC32_WdPhi7_HTT125||L1_DoubleJetC52||L1_DoubleJetC56_ETM60||L1_DoubleJetC60_ETM60||L1_DoubleJetC84||L1_DoubleMu0||L1_DoubleMu0_Eta1p6_WdEta18||L1_DoubleMu0_Eta1p6_WdEta18_OS||L1_DoubleMu6_EG6||L1_DoubleMu7_EG7||L1_DoubleMu_10_0_WdEta18||L1_DoubleMu_10_3p5||L1_DoubleMu_10_Open||L1_DoubleMu_12_5||L1_DoubleTauJet40er||L1_EG25er_HTT125||L1_ETM100||L1_ETM30||L1_ETM40||L1_ETM50||L1_ETM60||L1_ETM60_NotJet52WdPhi2||L1_ETM70||L1_ETM70_NotJet52WdPhi2||L1_HTT110_rHTM0p6_rHTM0p0_WdPhi6||L1_HTT125||L1_HTT125_rHTM0p3||L1_HTT150||L1_HTT175||L1_HTT200||L1_HTT250||L1_IsoEG20er_TauJet20er_NotWdEta0||L1_Jet32_DoubleMu_Open_10_MuMuNotWdPhi23_JetMuWdPhi1||L1_Jet32_MuOpen_EG10_MuEGNotWdPhi3_JetMuWdPhi1||L1_Mu0er_ETM55||L1_Mu10er_ETM50||L1_Mu12_EG10||L1_Mu14er_ETM30||L1_Mu16er_IsoTau36er||L1_Mu16er_TauJet20er||L1_Mu20_EG10||L1_Mu20_EG8||L1_Mu3_JetC16_WdEtaPhi2||L1_Mu3_JetC52_WdEtaPhi2||L1_Mu3_JetC92_WdEtaPhi2||L1_Mu4_EG18||L1_Mu5_DoubleEG5||L1_Mu5_EG15||L1_Mu5_EG20||L1_Mu5_IsoEG18||L1_Mu6_DoubleEG10||L1_Mu6_HTT150||L1_Mu8_HTT125||L1_QuadJetC36_TauJet52||L1_QuadJetC40||L1_QuadJetC60||L1_QuadJetC84||L1_QuadMu0||L1_SingleEG10||L1_SingleEG20||L1_SingleEG25||L1_SingleEG30||L1_SingleEG35||L1_SingleEG40||L1_SingleEG5||L1_SingleIsoEG18||L1_SingleIsoEG20er||L1_SingleIsoEG22er||L1_SingleIsoEG25||L1_SingleIsoEG25er||L1_SingleIsoEG28er||L1_SingleIsoEG30er||L1_SingleJet128||L1_SingleJet176||L1_SingleJet200||L1_SingleJet240||L1_SingleJet36||L1_SingleJet52||L1_SingleJet68||L1_SingleJet92||L1_SingleJetC20_NotBptxOR||L1_SingleJetC32_NotBptxOR||L1_SingleMu12||L1_SingleMu14er||L1_SingleMu16||L1_SingleMu16er||L1_SingleMu18er||L1_SingleMu20||L1_SingleMu20er||L1_SingleMu25||L1_SingleMu25er||L1_SingleMu30||L1_SingleMu30er||L1_SingleMu5||L1_SingleMu6_NotBptxOR||L1_SingleMuBeamHalo||L1_SingleMuOpen||L1_TripleEG_14_10_8||L1_TripleJet_92_76_64_VBF||L1_TripleMu0||L1_TripleMu_5_5_3||L1_ZeroBias'
 
 triggersGroupMap = dict(triggersGroupMap.items() + triggersL1GroupMap.items())
 
@@ -546,17 +548,18 @@ for trigger in triggersGroupMap.keys():
         if not (group in groupList) : groupList.append(group)
 
 for trigger in triggerList:
+    getTriggerString[trigger]=trigger
     for group in triggersGroupMap[trigger]:
-        if group in groupToString.keys(): groupToString[group]+='||'+trigger
-        else: groupToString[group]=trigger
+        if group in getTriggerString.keys(): getTriggerString[group]+='||'+trigger
+        else: getTriggerString[group]=trigger
 
 for group1 in groupList:
     for group2 in groupList:
         twoGroups = group1 + "-" + group2
         if not (twoGroups in twoGroupsList):
             twoGroupsList.append(twoGroups)
-            twoGroupsTrigger="("+(groupToString[group1])+")&&("+(groupToString[group2])+")"
-            twoGroupsToString[twoGroups]=twoGroupsTrigger
+            twoGroupsTrigger="("+(getTriggerString[group1])+")&&("+(getTriggerString[group2])+")"
+            getTriggerString[twoGroups]=twoGroupsTrigger
 
 triggerAndGroupList = triggerList[:] # [:] is required to clone the list!
 for group in groupList:
@@ -571,21 +574,4 @@ L1List = []
 for trigger in triggerList:
     if "HLT_" in trigger: HLTList.append(trigger)
     elif "L1_" in trigger: L1List.append(trigger)
-
-
-
-
-#import ROOT
-#groupCuts={}
-#for group in groupList:
-#    groupCuts[group] = ROOT.TCut(groupToString[group])
-
-
-##Excluded triggers HLT_Mu16_TkMu0_dEta18_Onia_v2||HLT_PFMET90_PFMHT90_IDTight_v1||HLT_Dimuon8_PsiPrime_Barrel_v2||HLT_Mu7p5_Track7_Jpsi_v2||HLT_Ele15_IsoVVVL_BTagtop8CSV07_PFHT400_v2||HLT_Ele27_eta2p1_WPLoose_Gsf_LooseIsoPFTau20_v2||HLT_Mu16_TkMu0_dEta18_Phi_v2||HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v2||HLT_Ele12_CaloIdL_TrackIdL_IsoVL_v2||HLT_Mu7p5_Track2_Upsilon_v2||HLT_DoubleEle33_CaloIdL_GsfTrkIdVL_v2||HLT_IsoTkMu20_eta2p1_v2||HLT_PFJet60_v2||HLT_Ele15_IsoVVVL_PFHT400_PFMET70_v2||HLT_Ele20WP60_Ele8_Mass55_v2||HLT_IsoMu20_eta2p1_v2||HLT_Mu7p5_L2Mu2_Jpsi_v2||HLT_IsoTkMu20_v2||HLT_IsoMu20_eta2p1_TriCentralPFJet50_40_30_v2||HLT_Mu15_IsoVVVL_PFHT600_v2||HLT_PFHT350_DisplacedDijet40_DisplacedTrack_v2||HLT_DiPFJetAve300_HFJEC_v2||HLT_L2Mu10_NoVertex_NoBPTX3BX_NoHalo_v2||HLT_Ele15_IsoVVVL_PFHT600_v2||HLT_Mu7p5_Track2_Jpsi_v2||HLT_JetE30_NoBPTX3BX_NoHalo_v2||HLT_Mu20_v2||HLT_L2Mu40_NoVertex_3Sta_NoBPTX3BX_NoHalo_v2||HLT_Mu7p5_L2Mu2_Upsilon_v2||HLT_Mu7p5_Track7_Upsilon_v2||HLT_Ele25WP60_SC4_Mass55_v2||HLT_PFMET110_PFMHT110_IDTight_v1||HLT_LooseIsoPFTau50_Trk30_eta2p1_MET80_v2||HLT_Dimuon8_Upsilon_Barrel_v2||HLT_QuadMuon0_Dimuon0_Upsilon_v2||HLT_PFMET100_PFMHT100_IDTight_v1||HLT_VBF_DisplacedJet40_DisplacedTrack_v2||HLT_Ele18_CaloIdL_TrackIdL_IsoVL_PFJet30_v2||HLT_ECALHT800_v2||HLT_Mu17_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v2||HLT_Ele27_eta2p1_WPLoose_Gsf_TriCentralPFJet50_40_30_v2||HLT_Ele12_CaloIdL_TrackIdL_IsoVL_PFJet30_v2||HLT_VBF_DisplacedJet40_Hadronic_v2||HLT_L2Mu35_NoVertex_3Sta_NoBPTX3BX_NoHalo_v2||HLT_IsoMu20_eta2p1_TriCentralPFJet30_v2||HLT_VBF_DisplacedJet40_TightID_Hadronic_v2||HLT_Dimuon0_Phi_Barrel_v2||HLT_Dimuon0_Jpsi_Muon_v2||HLT_PFJet40_v2||HLT_QuadPFJet_DoubleBTagCSV_VBF_Mqq200_v2||HLT_IsoMu20_eta2p1_CentralPFJet30_BTagCSV07_v2||HLT_Ele27_eta2p1_WPLoose_Gsf_DoubleMediumIsoPFTau40_Trk1_eta2p1_Reg_v2||HLT_PFHT550_DisplacedDijet40_Inclusive_v2||HLT_Mu8_TrkIsoVVL_v2||HLT_ZeroBias_v2||HLT_ReducedIterativeTracking_v2||HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_v2||HLT_Mu15_PFHT300_v2||HLT_Dimuon0_Upsilon_Muon_v2||HLT_RsqMR260_Rsq0p09_MR200_v2||HLT_QuadPFJet_SingleBTagCSV_VBF_Mqq460_v2||HLT_Dimuon16_Jpsi_v2||HLT_Mu7p5_Track3p5_Upsilon_v2
-
-#for trigger in triggerList:
-#    if 'All' in groupToString.keys(): groupToString['All']+='||'+trigger
-#    else: groupToString['All']=trigger
-
-#print groupToString['All']
 

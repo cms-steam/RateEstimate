@@ -6,7 +6,7 @@ import sys
 from math import *
 from os import walk
 from os import mkdir
-from triggersGroupMapPDs import *
+from triggersGroupMap__frozen_2015_50ns_5e33_v2_1_HLT_V5 import *
 from datasetCrossSectionsPhys14 import *
 
 from scipy.stats import binom
@@ -183,12 +183,15 @@ def getEvents(input_):
         ##if tree is defined, get totalEvents and passedEvents
         if (tree!=None): 
             totalEventsMatrix_ = tree.Draw("",denominatorString)
+            if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSing<0)&&("+denominatorString+")") ##FIXME: MCWeightSing -> MCWeightSign
             for trigger in triggerAndGroupList:
                 passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString[trigger]+')&&('+filterString+')')
+                if withNegativeWeights: passedEventsMatrix_[trigger] = passedEventsMatrix_[trigger] - 2*tree.Draw("",'(MCWeightSing<0)&&('+getTriggerString[trigger]+')&&('+filterString+')') ##FIXME: MCWeightSing -> MCWeightSign
             
             _file0.Close()
         else:  ##if tree is not undefined/empty set enties to zero
             totalEventsMatrix_ = 0
+            MCWeightSing
             for trigger in triggerAndGroupList:
                 passedEventsMatrix_[trigger] = 0
         
@@ -227,8 +230,7 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
     if dataset in datasetMuEnrichedList:        isMuEnriched = True
     if dataset in datasetAntiMuList:            isAntiMu = True
     if dataset in datasetAntiEMList:            isAntiEM = True
-    
-    if dataset in datasetNegWeightList:            withNegativeWeights = True
+    if dataset in datasetNegWeightList:         withNegativeWeights = True
     
     filterString = '1'
     
@@ -237,7 +239,7 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
     if (not useEMEnriched) and isEMEnriched: skip = True
     
     ## apply PU filter
-    if pileupFilter and ('QCD'in dirpath):
+    if pileupFilterL1 and ('QCD'in dirpath):
         if pileupFilterGen: filterString += '&&HLT_RemovePileUpDominatedEventsGen_v1'
         else: filterString += '&&HLT_RemovePileUpDominatedEvents_v1'
     
@@ -269,6 +271,7 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
             print "total rate of dataset =",rateDataset [dataset]
             print "using numerator filter:",filterString
             print "using denominator filter:",denominatorString
+            print "using negative weight? ",withNegativeWeights
         else:
             print
             print '#'*10,"Skipping ",dataset,'#'*30
@@ -314,19 +317,21 @@ startGlobal = time.time() ## timinig stuff
 #folder = 'HLTRates_V5'
 #folder = '/gpfs/ddn/srm/cms/store/user/sdonato/HLTRates_V7/'
 #folder = '/gpfs/ddn/srm/cms/store/user/sdonato/HLTRates_74X_50ns_V7/'
-folder = '/scratch/sdonato/STEAM/Rate_74X/PU30BX50/HLTRates_74X_50ns_Phys14_newBtag_V9/'
+#folder = '/scratch/sdonato/STEAM/Rate_74X/PU30BX50/HLTRates_74X_50ns_Phys14_newBtag_V9/'
+folder = '/scratch/sdonato/STEAM/Rate_74X/TestNewNtuple/'
 lumi =  5E33 # s-1cm-2
 log = 2 # use log=2
 multiprocess = 1           # number of processes
-pileupFilter = True         # use pile-up filter?
+pileupFilterL1 = True         # use pile-up filter?
 pileupFilterGen = False     # use pile-up filter gen or L1?
 useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
 evalHLTpaths = True        # evaluate HLT triggers rates?
 evalHLTgroups = False       # evaluate HLT triggers groups rates  ?
-evalHLTtwogroups = False    # evaluate the correlation on the HLT trigger groups rates?
-evalL1 = False              # evaluate L1 triggers rates?
-label = "rates_V1"
+#evalHLTtwopaths = True    # evaluate the correlation among the HLT trigger paths rates?
+evalHLTtwogroups = False    # evaluate the correlation among the HLT trigger groups rates?
+evalL1 = True              # evaluate L1 triggers rates?
+label = "rates_V2"
 
 EM_cut = "(!HLT_BCToEFilter_v1 && HLT_EmFilter_v1)"
 #Mu_cut = "(HLT_MuFilter_v1)"
@@ -340,25 +345,30 @@ datasetList+=datasetEMEnrichedList
 datasetList+=datasetMuEnrichedList
 
 print
+print "Using up to ", multiprocess ," processes."
 print "Folder: ", folder
 print "Luminosity: ", lumi
 print "Use QCDEMEnriched? ", useEMEnriched
 print "Use QCDMuEnriched? ", useMuEnriched
-print "Evaluate L1 triggers? ", evalL1
-print "Pile-up filter: ", pileupFilter
-print "Pile-up filterGen: ", pileupFilterGen
+print "Evaluate L1 triggers rates? ", evalL1
+print "Evaluate HLT triggers rates? ", evalHLTpaths
+#print "Evaluate HLT triggers shared rates? ", evalHLTtwopaths
+print "Evaluate HLT groups rates? ", evalHLTgroups
+print "Evaluate HLT groups shared rates? ", evalHLTtwogroups
+print "Pile-up filter based on L1 object (old): ", pileupFilterL1
+print "Pile-up filter based on pt-hat MC truth (new) : ", pileupFilterGen
 print
 
 # load library for multiprocessing
 if multiprocess>1: 
     from multiprocessing import Pool
-    print "Using up to ", multiprocess ," processes."
 
 ### initialization ###
 # fill triggerAndGroupList with the objects that you want to measure the rate (HLT+L1+HLTgroup+HLTtwogroup)
 triggerAndGroupList=[]
 if evalHLTpaths:        triggerAndGroupList=triggerAndGroupList+HLTList
 if evalHLTgroups:       triggerAndGroupList=triggerAndGroupList+groupList
+#if evalHLTtwopaths:     triggerAndGroupList=triggerAndGroupList+twoHLTsList
 if evalHLTtwogroups:    triggerAndGroupList=triggerAndGroupList+twoGroupsList
 if evalL1:              triggerAndGroupList=triggerAndGroupList+L1List
 
@@ -376,7 +386,7 @@ rateTriggerTotal = {}                   #rateTriggerTotal[(dataset,trigger)] = t
 squaredErrorRateTriggerTotal = {}       #squaredErrorRateTriggerTotal[trigger] = squared error on the rate
 setToZero(totalEventsMatrix,passedEventsMatrix,triggerAndGroupList,rateTriggerTotal,squaredErrorRateTriggerTotal)  #fill all dictionaries with zero
 
-## check trigger list in triggersGroupMap (ie. ~ Google doc), with trigge bits in ntuples (ie. GRun)
+## check trigger list in triggersGroupMap (ie. ~ Google doc), with trigger bits in ntuples (ie. GRun)
 triggerList = CompareGRunVsGoogleDoc(datasetList,triggerList,folder)
 
 ## loop on dataset and fill matrix with event counts, rates, and squared errors
@@ -393,7 +403,8 @@ for dataset in datasetList:
 filename = 'Results/'
 filename += label
 filename += "_"+triggerName
-if pileupFilter:
+filename += "_"+str(lumi).replace("+","")
+if pileupFilterL1:
     if pileupFilterGen:filename += '_PUfilterGen'
     else:filename += '_PUfilter'
 
