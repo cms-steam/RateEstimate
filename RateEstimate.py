@@ -6,17 +6,16 @@ from triggersGroupMap.triggersGroupMap__frozen_2015_50ns_5e33_v2p1_HLT_V5 import
 from datasetCrossSections.datasetCrossSectionsPhys14 import *
 
 folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/testNtuple/'
-lumi =  5E33 # s-1cm-2
-log = 2 # use log=2
+lumi =  5E33               # luminosity [s-1cm-2]
 multiprocess = 1           # number of processes
-pileupFilter = True         # use pile-up filter?
-pileupFilterGen = False     # use pile-up filter gen or L1?
+pileupFilter = True        # use pile-up filter?
+pileupFilterGen = False    # use pile-up filter gen or L1?
 useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
 evalHLTpaths = True        # evaluate HLT triggers rates?
 evalHLTgroups = True       # evaluate HLT triggers groups rates  ?
 #evalHLTtwopaths = True    # evaluate the correlation among the HLT trigger paths rates?
-evalHLTtwogroups = False    # evaluate the correlation among the HLT trigger groups rates?
+evalHLTtwogroups = False   # evaluate the correlation among the HLT trigger groups rates?
 evalL1 = True              # evaluate L1 triggers rates?
 label = "rates_V1"         # name of the output files
 ###############################################################################################
@@ -29,6 +28,9 @@ from os import walk
 from os import mkdir
 from scipy.stats import binom
 
+log = 2                     # use log=2
+
+## filter to be used for QCD EM/Mu enriched
 EM_cut = "(!HLT_BCToEFilter_v1 && HLT_EmFilter_v1)"
 Mu_cut = "MCmu3"
 
