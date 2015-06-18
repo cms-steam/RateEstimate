@@ -23,9 +23,6 @@ datasetNegWeightList=[
 'WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8',
 ]
 
-datasetQCD15 = [
-]
-
 datasetAntiMuList= [
 'QCD_Pt_15to30_TuneCUETP8M1_13TeV_pythia8',
 'QCD_Pt_30to50_TuneCUETP8M1_13TeV_pythia8',

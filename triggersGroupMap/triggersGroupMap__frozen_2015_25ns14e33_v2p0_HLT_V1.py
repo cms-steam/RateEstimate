@@ -1,5 +1,5 @@
-#  25ns master table: /dev/CMSSW_7_4_0/HLT/V212                                    
-#  /frozen/2015/25ns14e33/v2.0/HLT/V1: same as /dev/CMSSW_7_4_0/GRun/V76      14e33    7e33                          
+# -*- coding: iso-8859-15 -*-#  25ns master table: /dev/CMSSW_7_4_0/HLT/V212                                    
+#  /frozen/2015/25ns14e33/v2.1/HLT/V1: same as /dev/CMSSW_7_4_0/GRun/V76      14e33 7e33 L1 prescales  HLT prescales  Total prescale                        
 
 triggerList = []
 triggerName = "_frozen_2015_25ns14e33_v2p0_HLT_V1"
@@ -559,18 +559,16 @@ triggersL1GroupMap = {
     'L1_SingleMuBeamHalo' : ['Masked'],
 }
 triggersToRemove = [
-    # low pileup menu
-    'HLT_FullTrack12_v',
-    'HLT_FullTrack20_v',
-    'HLT_FullTrack30_v',
-    'HLT_FullTrack50_v',
-
-    'HLT_PixelTracks_Multiplicity60_v',
-    'HLT_PixelTracks_Multiplicity85_v',
-    'HLT_PixelTracks_Multiplicity110_v',
-    'HLT_PixelTracks_Multiplicity135_v',
-    'HLT_PixelTracks_Multiplicity160_v',
-
+    # not in stream A
+    'HLT_EcalCalibration_v',
+    
+    # use UTCA (not simulated in MC)
+    'HLT_HcalUTCA_v',
+    
+    # use NZS (not simulated in MC)
+    'HLT_HcalPhiSym_v',
+    'HLT_HcalNZS_v',
+    
     # fake triggers
     'HLT_BCToEFilter_v',
     'HLT_RemovePileUpDominatedEventsGen_v',

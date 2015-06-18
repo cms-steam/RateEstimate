@@ -6,16 +6,16 @@
 from triggersGroupMap.triggersGroupMap__frozen_2015_50ns_5e33_v2p1_HLT_V5 import *
 from datasetCrossSections.datasetCrossSectionsPhys14 import *
 
-folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/testNtuple/'       # folder containing ntuples
+folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/STEAM/Phys14_50ns_mini/'       # folder containing ntuples
 lumi =  5E33               # luminosity [s-1cm-2]
-multiprocess = 1           # number of processes
+multiprocess = 8           # number of processes
 pileupFilter = True        # use pile-up filter?
 pileupFilterGen = False    # use pile-up filter gen or L1?
 useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
 evalL1 = True              # evaluate L1 triggers rates?
 evalHLTpaths = True        # evaluate HLT triggers rates?
-evalHLTgroups = True       # evaluate HLT triggers groups rates  ?
+evalHLTgroups = False       # evaluate HLT triggers groups rates  ?
 #evalHLTtwopaths = True    # evaluate the correlation among the HLT trigger paths rates?
 evalHLTtwogroups = False   # evaluate the correlation among the HLT trigger groups rates?
 label = "rates_V1"         # name of the output files
@@ -165,18 +165,26 @@ def writeMatrixRates(fileName,datasetList,rateTriggerDataset,rateTriggerTotal,tr
 
 ## compare the trigger list from the ntuple and from triggersGroupMap*.py and print the difference
 def CompareGRunVsGoogleDoc(datasetList,triggerList,folder):
-    dirpath=''
-    filenames=[]
+    # take the first "hltbit" file
+    dirpath_ = ''
+    filenames_ = []
     for dataset in datasetList:
-        for (dirpath, dirnames, filenames) in walk(folder+'/'+dataset):
-            if len(filenames)>0 and 'root' in filenames[0]: break
+        for (dirpath_, dirnames, filenames_) in walk(folder+'/'+dataset):
+            if len(filenames_)>0 and 'root' in filenames_[0]:
+                filenames = filenames_
+                dirpath = dirpath_
+                break
     
-    if len(filenames) is 0:
+    if len(filenames)==0:
         raise ValueError('No good file found in '+folder)
     
-    _file0 = ROOT.TFile.Open(dirpath+'/'+filenames[0])
+    for filename in filenames:
+        if 'hltbit' in filename: break
+    
+    _file0 = ROOT.TFile.Open(dirpath+'/'+filename)
     chain = ROOT.gDirectory.Get("HltTree")
     
+    # get trigger bits and make a comparison with google DOC
     triggerListInNtuples = []
     getTriggersListFromNtuple(chain,triggerListInNtuples)
     intersection = set(triggerListInNtuples).intersection(triggerList)
@@ -206,32 +214,31 @@ def CompareGRunVsGoogleDoc(datasetList,triggerList,folder):
 
 ## given filepath, the filter string to use at the numerator and denominator, get the number of events that pass the triggers
 def getEvents(input_):
-        (filepath,filterString,denominatorString,withNegativeWeights) = input_
-        passedEventsMatrix_={}
-        ##try to open the file and get the TTree
-        tree = None
-        try:
-            _file0 = ROOT.TFile.Open(filepath)
-            tree=ROOT.gDirectory.Get("HltTree")
-        except:
-            pass
+    (filepath,filterString,denominatorString,withNegativeWeights) = input_
+    passedEventsMatrix_={}
+    #try to open the file and get the TTree
+    tree = None
+    try:
+       _file0 = ROOT.TFile.Open(filepath)
+       tree=ROOT.gDirectory.Get("HltTree")
+    except:
+        pass
+    
+    #if tree is defined, get totalEvents and passedEvents
+    if (tree!=None): 
+        totalEventsMatrix_ = tree.Draw("",denominatorString)
+        if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSign<0)&&("+denominatorString+")")
+        for trigger in triggerAndGroupList:
+            passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString[trigger]+')&&('+filterString+')')
+            if withNegativeWeights: passedEventsMatrix_[trigger] = passedEventsMatrix_[trigger] - 2*tree.Draw("",'(MCWeightSign<0)&&('+getTriggerString[trigger]+')&&('+filterString+')')
         
-        ##if tree is defined, get totalEvents and passedEvents
-        if (tree!=None): 
-            totalEventsMatrix_ = tree.Draw("",denominatorString)
-            if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSing<0)&&("+denominatorString+")") ##FIXME: MCWeightSing -> MCWeightSign
-            for trigger in triggerAndGroupList:
-                passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString[trigger]+')&&('+filterString+')')
-                if withNegativeWeights: passedEventsMatrix_[trigger] = passedEventsMatrix_[trigger] - 2*tree.Draw("",'(MCWeightSing<0)&&('+getTriggerString[trigger]+')&&('+filterString+')') ##FIXME: MCWeightSing -> MCWeightSign
-            
-            _file0.Close()
-        else:  ##if tree is not undefined/empty set enties to zero
-            totalEventsMatrix_ = 0
-            MCWeightSing
-            for trigger in triggerAndGroupList:
-                passedEventsMatrix_[trigger] = 0
-        
-        return passedEventsMatrix_,totalEventsMatrix_
+        _file0.Close()
+    else:  #if tree is not undefined/empty set enties to zero
+        totalEventsMatrix_ = 0
+        for trigger in triggerAndGroupList:
+            passedEventsMatrix_[trigger] = 0
+    
+    return passedEventsMatrix_,totalEventsMatrix_
 
 ## fill the matrixes of the number of events and the rates for each dataset and trigger
 def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerDataset,squaredErrorRateTriggerDataset):
@@ -240,8 +247,11 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
     dirpath=''
     filenames=[]
     ## find the subdirectory containing the ROOT files
-    for (dirpath, dirnames, filenames) in walk(folder+'/'+dataset):
-       if len(filenames)>0 and 'root' in filenames[0]: break
+    for (dirpath_, dirnames, filenames_) in walk(folder+'/'+dataset):
+        if len(filenames_)>0 and 'root' in filenames_[0]:
+            filenames = filenames_
+            dirpath = dirpath_
+            break
     
     ## print an error if a dataset is missing
     if dirpath=='':
@@ -350,7 +360,6 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
 startGlobal = time.time() ## timinig stuff
 
 ## fill datasetList properly
-datasetList=datasetQCD15+datasetList
 datasetList+=datasetEMEnrichedList
 datasetList+=datasetMuEnrichedList
 

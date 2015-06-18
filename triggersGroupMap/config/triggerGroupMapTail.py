@@ -1,16 +1,14 @@
 triggersToRemove = [
-    # low pileup menu
-    'HLT_FullTrack12_v',
-    'HLT_FullTrack20_v',
-    'HLT_FullTrack30_v',
-    'HLT_FullTrack50_v',
-
-    'HLT_PixelTracks_Multiplicity60_v',
-    'HLT_PixelTracks_Multiplicity85_v',
-    'HLT_PixelTracks_Multiplicity110_v',
-    'HLT_PixelTracks_Multiplicity135_v',
-    'HLT_PixelTracks_Multiplicity160_v',
-
+    # not in stream A
+    'HLT_EcalCalibration_v',
+    
+    # use UTCA (not simulated in MC)
+    'HLT_HcalUTCA_v',
+    
+    # use NZS (not simulated in MC)
+    'HLT_HcalPhiSym_v',
+    'HLT_HcalNZS_v',
+    
     # fake triggers
     'HLT_BCToEFilter_v',
     'HLT_RemovePileUpDominatedEventsGen_v',

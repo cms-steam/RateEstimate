@@ -1,6 +1,7 @@
 ### This file works with both Phys14 and Fall13 samples ###
 
 datasetList = [
+'QCD_Pt-15to30_Tune4C_13TeV_pythia8',
 'QCD_Pt-30to50_Tune4C_13TeV_pythia8',
 'QCD_Pt-50to80_Tune4C_13TeV_pythia8',
 'QCD_Pt-80to120_Tune4C_13TeV_pythia8',
@@ -18,10 +19,6 @@ datasetList = [
 'DYToMuMu_Tune4C_13TeV-pythia8',
 'WToENu_Tune4C_13TeV-pythia8',
 'WToMuNu_Tune4C_13TeV-pythia8',
-]
-
-datasetQCD15 = [
-'QCD_Pt-15to30_Tune4C_13TeV_pythia8'
 ]
 
 datasetNegWeightList=[

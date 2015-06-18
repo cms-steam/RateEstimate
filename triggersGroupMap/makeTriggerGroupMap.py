@@ -99,6 +99,7 @@ tmp = open("tmp/tmp.py","r")
 comment = comment.replace('\n', '\n#')
 comment = comment.replace('\t', ' ')
 comment = comment[:-1]
+fileOut.write("# -*- coding: iso-8859-15 -*-")
 fileOut.write("#"+comment)
 
 fileOut.write('\ntriggerList = []\n')
