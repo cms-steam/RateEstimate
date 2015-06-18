@@ -2,10 +2,11 @@
 # -*- coding: iso-8859-15 -*-
 
 ########## Configuration #####################################################################
+
 from triggersGroupMap.triggersGroupMap__frozen_2015_50ns_5e33_v2p1_HLT_V5 import *
 from datasetCrossSections.datasetCrossSectionsPhys14 import *
 
-folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/testNtuple/'
+folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/testNtuple/'       # folder containing ntuples
 lumi =  5E33               # luminosity [s-1cm-2]
 multiprocess = 1           # number of processes
 pileupFilter = True        # use pile-up filter?
@@ -18,7 +19,23 @@ evalHLTgroups = True       # evaluate HLT triggers groups rates  ?
 evalHLTtwogroups = False   # evaluate the correlation among the HLT trigger groups rates?
 evalL1 = True              # evaluate L1 triggers rates?
 label = "rates_V1"         # name of the output files
+
 ###############################################################################################
+
+##### Other configurations #####
+
+## log level
+log = 2                     # use log=2
+
+## filter to be used for QCD EM/Mu enriched
+EM_cut = "(!HLT_BCToEFilter_v1 && HLT_EmFilter_v1)"
+Mu_cut = "MCmu3"
+
+## filter to be used for pile-up filter
+PUFilterGen = 'HLT_RemovePileUpDominatedEventsGen_v1'
+PUFilterL1 = 'HLT_RemovePileUpDominatedEvents_v1'
+
+##### Load lib #####
 
 import ROOT
 import time
@@ -28,11 +45,7 @@ from os import walk
 from os import mkdir
 from scipy.stats import binom
 
-log = 2                     # use log=2
-
-## filter to be used for QCD EM/Mu enriched
-EM_cut = "(!HLT_BCToEFilter_v1 && HLT_EmFilter_v1)"
-Mu_cut = "MCmu3"
+##### Function definition #####
 
 ## modified square root to avoid error
 def sqrtMod(x):
@@ -263,8 +276,8 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
     
     ## apply PU filter
     if pileupFilter and ('QCD'in dirpath):
-        if pileupFilterGen: filterString += '&&HLT_RemovePileUpDominatedEventsGen_v1'
-        else: filterString += '&&HLT_RemovePileUpDominatedEvents_v1'
+        if pileupFilterGen: filterString += '&&'+PUFilterGen
+        else: filterString += '&&'+PUFilterL1
     
     ## if useEMEnriched, apply AntiEM cut 
     if useEMEnriched and isAntiEM: filterString += '&& !'+EM_cut
@@ -410,7 +423,7 @@ filename += "_"+triggerName
 filename += "_"+str(lumi).replace("+","")
 if pileupFilter:
     if pileupFilterGen:filename += '_PUfilterGen'
-    else:filename += '_PUfilter'
+    else:filename += '_PUfilterL1'
 
 if useEMEnriched: filename += '_EMEn'
 if useMuEnriched: filename += '_MuEn'
