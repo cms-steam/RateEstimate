@@ -13,11 +13,11 @@ pileupFilter = True        # use pile-up filter?
 pileupFilterGen = False    # use pile-up filter gen or L1?
 useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
+evalL1 = True              # evaluate L1 triggers rates?
 evalHLTpaths = True        # evaluate HLT triggers rates?
 evalHLTgroups = True       # evaluate HLT triggers groups rates  ?
 #evalHLTtwopaths = True    # evaluate the correlation among the HLT trigger paths rates?
 evalHLTtwogroups = False   # evaluate the correlation among the HLT trigger groups rates?
-evalL1 = True              # evaluate L1 triggers rates?
 label = "rates_V1"         # name of the output files
 
 ###############################################################################################
@@ -101,7 +101,7 @@ def setToZero(totalEventsMatrix,passedEventsMatrix,triggerAndGroupList,rateTrigg
         rateTriggerTotal[trigger]=0
         squaredErrorRateTriggerTotal[trigger]=0
 
-## read totalEventsMatrix and passedEventsMatrix and write a .csv file containing the number of events that passed the trigger
+## read totalEventsMatrix and passedEventsMatrix and write a .tsv file containing the number of events that passed the trigger
 def writeMatrixEvents(fileName,datasetList,triggerList,totalEventsMatrix,passedEventsMatrix,writeGroup=False):
     f = open(fileName, 'w')
     text = 'Path\t' 
@@ -134,7 +134,7 @@ def writeMatrixEvents(fileName,datasetList,triggerList,totalEventsMatrix,passedE
     f.write(text)
     f.close()
 
-## read rateTriggerTotal and rateTriggerDataset and write a .csv file containing the trigger rates
+## read rateTriggerTotal and rateTriggerDataset and write a .tsv file containing the trigger rates
 def writeMatrixRates(fileName,datasetList,rateTriggerDataset,rateTriggerTotal,triggerList,writeGroup=False):
     f = open(fileName, 'w')
     text = 'Path\t'
@@ -434,16 +434,16 @@ except:
     pass
 
 ## write files with events count
-if evalL1: writeMatrixEvents(filename+'_L1.matrixEvents.csv',datasetList,L1List,totalEventsMatrix,passedEventsMatrix,True)
-if evalHLTpaths: writeMatrixEvents(filename+'_matrixEvents.csv',datasetList,HLTList,totalEventsMatrix,passedEventsMatrix,True)
-if evalHLTgroups: writeMatrixEvents(filename+'_matrixEvents.groups.csv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix)
-if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups.csv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
+if evalL1: writeMatrixEvents(filename+'_L1.matrixEvents.tsv',datasetList,L1List,totalEventsMatrix,passedEventsMatrix,True)
+if evalHLTpaths: writeMatrixEvents(filename+'_matrixEvents.tsv',datasetList,HLTList,totalEventsMatrix,passedEventsMatrix,True)
+if evalHLTgroups: writeMatrixEvents(filename+'_matrixEvents.groups.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix)
+if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups.tsv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
 
 ## write files with  trigger rates
-if evalL1:writeMatrixRates(filename+'_L1_matrixRates.csv',datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
-if evalHLTpaths: writeMatrixRates(filename+'_matrixRates.csv',datasetList,rateTriggerDataset,rateTriggerTotal,HLTList,True)
-if evalHLTgroups: writeMatrixRates(filename+'_matrixRates.groups.csv',datasetList,rateTriggerDataset,rateTriggerTotal,groupList)
-if evalHLTtwogroups: writeMatrixRates(filename+'_matrixRates.twogroups.csv',datasetList,rateTriggerDataset,rateTriggerTotal,twoGroupsList)
+if evalL1:writeMatrixRates(filename+'_L1_matrixRates.tsv',datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
+if evalHLTpaths: writeMatrixRates(filename+'_matrixRates.tsv',datasetList,rateTriggerDataset,rateTriggerTotal,HLTList,True)
+if evalHLTgroups: writeMatrixRates(filename+'_matrixRates.groups.tsv',datasetList,rateTriggerDataset,rateTriggerTotal,groupList)
+if evalHLTtwogroups: writeMatrixRates(filename+'_matrixRates.twogroups.tsv',datasetList,rateTriggerDataset,rateTriggerTotal,twoGroupsList)
 
 
 ## print timing
