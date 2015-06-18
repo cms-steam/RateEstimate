@@ -1,15 +1,36 @@
 #! /usr/bin/env python
 # -*- coding: iso-8859-15 -*-
+
+########## Configuration #####################################################################
+from triggersGroupMap.triggersGroupMap__frozen_2015_50ns_5e33_v2p1_HLT_V5 import *
+from datasetCrossSections.datasetCrossSectionsPhys14 import *
+
+folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/testNtuple/'
+lumi =  5E33 # s-1cm-2
+log = 2 # use log=2
+multiprocess = 1           # number of processes
+pileupFilter = True         # use pile-up filter?
+pileupFilterGen = False     # use pile-up filter gen or L1?
+useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
+useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
+evalHLTpaths = True        # evaluate HLT triggers rates?
+evalHLTgroups = True       # evaluate HLT triggers groups rates  ?
+#evalHLTtwopaths = True    # evaluate the correlation among the HLT trigger paths rates?
+evalHLTtwogroups = False    # evaluate the correlation among the HLT trigger groups rates?
+evalL1 = True              # evaluate L1 triggers rates?
+label = "rates_V1"         # name of the output files
+###############################################################################################
+
 import ROOT
 import time
 import sys
 from math import *
 from os import walk
 from os import mkdir
-from triggersGroupMap.triggersGroupMap__frozen_2015_50ns_5e33_v2p1_HLT_V5 import *
-from datasetCrossSections.datasetCrossSectionsPhys14 import *
-
 from scipy.stats import binom
+
+EM_cut = "(!HLT_BCToEFilter_v1 && HLT_EmFilter_v1)"
+Mu_cut = "MCmu3"
 
 ## modified square root to avoid error
 def sqrtMod(x):
@@ -308,37 +329,17 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
     if log>1:
         if not skip: print "time(s) =",round((end - start),2)," total events=",totalEventsMatrix[dataset]," time per 10k events(s)=", round((end - start)*10000/totalEventsMatrix[dataset],2)
 
-################################################################################################################
+########## Main #####################################################################
+
 ## start the script
 startGlobal = time.time() ## timinig stuff
 
-## use options:
-folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/testNtuple/'
-lumi =  5E33 # s-1cm-2
-log = 2 # use log=2
-multiprocess = 1           # number of processes
-pileupFilter = True         # use pile-up filter?
-pileupFilterGen = False     # use pile-up filter gen or L1?
-useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
-useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
-evalHLTpaths = True        # evaluate HLT triggers rates?
-evalHLTgroups = True       # evaluate HLT triggers groups rates  ?
-#evalHLTtwopaths = True    # evaluate the correlation among the HLT trigger paths rates?
-evalHLTtwogroups = False    # evaluate the correlation among the HLT trigger groups rates?
-evalL1 = True              # evaluate L1 triggers rates?
-label = "rates_V2"
-
-EM_cut = "(!HLT_BCToEFilter_v1 && HLT_EmFilter_v1)"
-#Mu_cut = "(HLT_MuFilter_v1)"
-Mu_cut = "MCmu3"
-
-#if useEMEnriched:    datasetList+=datasetEMEnrichedList
-#if useMuEnriched:    datasetList+=datasetMuEnrichedList
-
+## fill datasetList properly
 datasetList=datasetQCD15+datasetList
 datasetList+=datasetEMEnrichedList
 datasetList+=datasetMuEnrichedList
 
+## print a log
 print
 print "Using up to ", multiprocess ," processes."
 print "Folder: ", folder
@@ -378,6 +379,7 @@ triggerList=[]
 if evalHLTpaths:        triggerList=triggerList+HLTList
 if evalL1:              triggerList=triggerList+L1List
 
+# define dictionaries
 passedEventsMatrix = {}                 #passedEventsMatrix[(dataset,trigger)] = events passed by a trigger in a dataset
 totalEventsMatrix = {}                  #totalEventsMatrix[(dataset,trigger)] = total events of a dataset
 rateDataset = {}                        #rateDataset[dataset] = rate of a dataset (xsect*lumi)
@@ -399,7 +401,6 @@ for dataset in datasetList:
     for trigger in triggerAndGroupList:
             rateTriggerTotal[trigger] += rateTriggerDataset[(dataset,trigger)]
             squaredErrorRateTriggerTotal[trigger] += squaredErrorRateTriggerDataset[(dataset,trigger)]
-
 
 filename = 'Results/'
 filename += label
