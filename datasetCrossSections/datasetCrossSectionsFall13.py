@@ -22,7 +22,6 @@ datasetList = [
 ]
 
 datasetNegWeightList=[
-'DYToMuMu_Tune4C_13TeV-pythia8'
 ]
 
 datasetAntiMuList= [
