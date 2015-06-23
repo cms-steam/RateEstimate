@@ -166,8 +166,8 @@ def writeMatrixRates(fileName,datasetList,rateTriggerDataset,rateTriggerTotal,tr
 ## compare the trigger list from the ntuple and from triggersGroupMap*.py and print the difference
 def CompareGRunVsGoogleDoc(datasetList,triggerList,folder):
     # take the first "hltbit" file
-    dirpath_ = ''
-    filenames_ = []
+    dirpath = ''
+    filenames = []
     for dataset in datasetList:
         for (dirpath_, dirnames, filenames_) in walk(folder+'/'+dataset):
             if len(filenames_)>0 and 'root' in filenames_[0]:
