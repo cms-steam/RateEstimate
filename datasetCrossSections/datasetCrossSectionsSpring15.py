@@ -90,5 +90,5 @@ xsectionDatasets ={
 'QCD_Pt-120to170_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8':477000.0*0.05208,
 
 'WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8':60290.,#16000.,
-'DYToLL_M_1_TuneCUETP8M1_13TeV_pythia8':6960,#6960.
+'DYToLL_M_1_TuneCUETP8M1_13TeV_pythia8':20000,#about 6960. x3
 }
