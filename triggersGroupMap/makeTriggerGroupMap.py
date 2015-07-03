@@ -3,14 +3,19 @@
 
 ########## Configuration ##############################################
 ### 50ns example ###
-nameMenu = "/frozen/2015/50ns_5e33/v2.1/HLT/V5"
-linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1xeifxX9oZUT47GDjyepvGgPPIzV333Txf8BD4FnHTyc/edit#gid=0"       #link to 50ns frozen menu (16/06/2015)
-L1Triggers = "config/triggersGroupMap_L1Menu_Collisions2015_50nsGct_v3.py"
+nameMenu = "/frozen/2015/50ns_5e33/v2.2/HLT/V2"
+linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1M1wwudNnCTDdNAYpKcCt0lMJTpBFyuP8of21sdOyhm0/edit#gid=0"       #link to 50ns frozen menu (16/06/2015)
+L1Triggers = "config/triggersGroupMap_L1Menu_Collisions2015_50nsGct_v4.py"
 
 ### 25ns example ###
 #nameMenu = "/frozen/2015/25ns14e33/v2.0/HLT/V1"
 #linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1OGcjnJdkwh_ysNhnvf2jv-It2xruG5DpsDgMXNcc7d4/edit#gid=0"       #link to 25ns frozen menu (16/06/2015)
 #L1Triggers = "config/triggersGroupMap_L1Menu_Collisions2015_25nsStage1_v3.py"
+
+### old 50ns example ###
+#nameMenu = "/frozen/2015/50ns_5e33/v2.1/HLT/V5"
+#linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1xeifxX9oZUT47GDjyepvGgPPIzV333Txf8BD4FnHTyc/edit#gid=0"       #link to 50ns frozen menu (16/06/2015)
+#L1Triggers = "config/triggersGroupMap_L1Menu_Collisions2015_50nsGct_v3.py"
 ###################################################################
 download = True
 nameMenu = nameMenu.replace("\\","_")
@@ -36,6 +41,9 @@ def getGroups(groupString):
     groupString=groupString.replace("Top","TOP")
     groupString=groupString.replace("Tau","TAU")
     groupString=groupString.replace("TAUs","TAU")
+    groupString=groupString.replace("H→4b","")
+    groupString=groupString.replace("H→ττ","")
+    groupString=groupString.replace("#N/A","NoGroup")
     splitted = groupString.split(",")
     if splitted[0]=="":
         splitted=["NoGroup"]
