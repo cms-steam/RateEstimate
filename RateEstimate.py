@@ -3,14 +3,16 @@
 
 ########## Configuration #####################################################################
 
-from triggersGroupMap.triggersGroupMap__frozen_2015_50ns_5e33_v2p1_HLT_V5 import *
-from datasetCrossSections.datasetCrossSectionsPhys14 import *
+from triggersGroupMap.triggersGroupMap__frozen_2015_50ns_5e33_v2p2_HLT_V2 import *
+#from datasetCrossSections.datasetCrossSectionsPhys14 import *
+from datasetCrossSections.datasetCrossSectionsSpring15 import *
 
-folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/STEAM/Phys14_50ns_mini/'       # folder containing ntuples
+#folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/STEAM/Phys14_50ns_mini/'       # folder containing ntuples
+folder = '/gpfs/ddn/srm/cms/store/user/sdonato/HLTRates_50ns_frozenV2p2_Spring15_V1'       # folder containing ntuples
 lumi =  5E33               # luminosity [s-1cm-2]
 multiprocess = 8           # number of processes
 pileupFilter = True        # use pile-up filter?
-pileupFilterGen = False    # use pile-up filter gen or L1?
+pileupFilterGen = True    # use pile-up filter gen or L1?
 useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
 evalL1 = True              # evaluate L1 triggers rates?

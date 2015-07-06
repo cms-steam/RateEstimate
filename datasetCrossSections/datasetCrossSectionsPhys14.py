@@ -61,9 +61,9 @@ xsectionDatasets ={
 'QCD_Pt-300to470_Tune4C_13TeV_pythia8':7475.,
 'QCD_Pt-470to600_Tune4C_13TeV_pythia8':587.1,
 'QCD_Pt-600to800_Tune4C_13TeV_pythia8':167.,
-'QCD_Pt-600to800_Tune4C_13TeV_pythia8':28.25,
-'QCD_Pt-800to1000_Tune4C_13TeV_pythia8':8.195,
-'QCD_Pt-1000to1400_Tune4C_13TeV_pythia8':0.7346,
+'QCD_Pt-800to1000_Tune4C_13TeV_pythia8':28.25,
+'QCD_Pt-1000to1400_Tune4C_13TeV_pythia8':8.195,
+'QCD_Pt-1400to1800_Tune4C_13TeV_pythia8':0.7346,
 'QCD_Pt-1800_Tune4C_13TeV_pythia8':0.1091,
 
 'QCD_Pt-30to80_EMEnriched_Tune4C_13TeV_pythia8':185900000 * 0.06071,

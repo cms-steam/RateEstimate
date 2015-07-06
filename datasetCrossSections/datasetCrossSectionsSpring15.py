@@ -72,7 +72,23 @@ xsectionDatasets ={
 'QCD_Pt_170to300_TuneCUETP8M1_13TeV_pythia8':117276.,#120300.,
 'QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8':7823.,#7475.,
 'QCD_Pt_470to600_TuneCUETP8M1_13TeV_pythia8':648.2,#587.1,
+'QCD_Pt_600to800_TuneCUETP8M1_13TeV_pythia8':186.9,#167.,
+'QCD_Pt_800to1000_TuneCUETP8M1_13TeV_pythia8':32.293,#28.25,
+'QCD_Pt_1000to1400_TuneCUETP8M1_13TeV_pythia8':9.4183
+,#8.195,
+'QCD_Pt_1400to1800_TuneCUETP8M1_13TeV_pythia8':0.84265,#0.7346,
+'QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8':0.114943
+,#0.1091,
+'QCD_Pt_2400to3200_TuneCUETP8M1_13TeV_pythia8':0.00682981
+,#0.0,
+'QCD_Pt_3200toInf_TuneCUETP8M1_13TeV_pythia8':0.000165445,#0.0,
 
+#'QCD_Pt_800to1000_TuneCUETP8M1_13TeV_pythia8',
+#'QCD_Pt_1000to1400_TuneCUETP8M1_13TeV_pythia8',
+#'QCD_Pt_1400to1800_TuneCUETP8M1_13TeV_pythia8',
+#'QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8',
+#'QCD_Pt_2400to3200_TuneCUETP8M1_13TeV_pythia8',
+#'QCD_Pt_3200toInf_TuneCUETP8M1_13TeV_pythia8',
 ## EM fraction evaluated using fraction "(!HLT_BCToEFilter_v1 && HLT_EmFilter_v1)" in plain QCD sample 
 'QCD_Pt-15to20_EMEnriched_TuneCUETP8M1_13TeV_pythia8':1279000000.0*0.001309,
 'QCD_Pt-20to30_EMEnriched_TuneCUETP8M1_13TeV_pythia8':557600000.0*0.009914,
