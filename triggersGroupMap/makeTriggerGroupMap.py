@@ -1,27 +1,34 @@
 #! /usr/bin/env python
- # -*- coding: UTF-8 -*-
+ # -*- coding: UTF-8 -*
 
 ########## Configuration ##############################################
-### 50ns example ###
-nameMenu = "/frozen/2015/50ns_5e33/v2.2/HLT/V2"
-linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1M1wwudNnCTDdNAYpKcCt0lMJTpBFyuP8of21sdOyhm0/edit#gid=0"       #link to 50ns frozen menu (16/06/2015)
-L1Triggers = "config/triggersGroupMap_L1Menu_Collisions2015_50nsGct_v4.py"
 
-### 25ns example ###
-#nameMenu = "/frozen/2015/25ns14e33/v2.0/HLT/V1"
-#linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1OGcjnJdkwh_ysNhnvf2jv-It2xruG5DpsDgMXNcc7d4/edit#gid=0"       #link to 25ns frozen menu (16/06/2015)
-#L1Triggers = "config/triggersGroupMap_L1Menu_Collisions2015_25nsStage1_v3.py"
+### 25ns example from frozen 25ns GoogleDOC menu ###
+nameMenu = "/frozen/2015/25ns14e33/v3.3/HLT/V2"
+linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1BkgAHCC4UtP5sddTZ5G5iWY16BxleuK7rqT-Iz2LHiM/edit#gid=0"       #link to 25ns frozen menu (17/08/2015)
+L1Triggers = "config/triggersGroupMap_L1Menu_Collisions2015_25nsStage1_v3.py"
 
-### old 50ns example ###
-#nameMenu = "/frozen/2015/50ns_5e33/v2.1/HLT/V5"
-#linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1xeifxX9oZUT47GDjyepvGgPPIzV333Txf8BD4FnHTyc/edit#gid=0"       #link to 50ns frozen menu (16/06/2015)
-#L1Triggers = "config/triggersGroupMap_L1Menu_Collisions2015_50nsGct_v3.py"
+#### 50ns example from frozen 50ns GoogleDOC menu ###
+#nameMenu = "online/collisions/2015/50ns_5e33/v3.4/HLT/V2"
+#linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1MTMNz-edWykho59_zBiSu24L7FeNV0WprG7_YdULntw/edit#gid=0"       #link to 50ns frozen menu (17/08/2015)
+#L1Triggers = "config/triggersGroupMap_L1Menu_Collisions2015_50nsGct_v4.py"
+
+## 25ns example from "development" GoogleDOC menu ###
+#nameMenu = "/dev/CMSSW_7_4_0/HLT/V382"
+#linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1AVAiNLvQZVVuDC0mOt7xZqzcUxJ5dv-9mjLui6m7fz4/edit#gid=0"       #link to development menu (17/08/2015)
+#L1Triggers = "config/triggersGroupMap_L1Menu_Collisions2015_50nsGct_v4.py"
+#scenario = "25ns"       #select scenario to use in the development menu
+
 ###################################################################
 download = True
 nameMenu = nameMenu.replace("\\","_")
 nameMenu = nameMenu.replace("/","_")
 nameMenu = nameMenu.replace(" ","_")
 nameMenu = nameMenu.replace(".","p")
+
+if not('scenario' in vars() or 'scenario' in globals()): scenario = ""
+if not scenario=="":
+    nameMenu = nameMenu + "_"+scenario
 
 def getGroups(groupString):
     groupString=groupString.replace(" ","")
@@ -74,6 +81,7 @@ comment=""
 count=0
 idx_path=-1
 idx_group=-1
+idx_scenario=-1
 triggerMap={}
 allgroups=set()
 alltriggers=set()
@@ -84,10 +92,13 @@ for line in lines:
         for word in words:
             if(word=="Path"): idx_path = words.index(word)
             if(word=="Group"): idx_group = words.index(word)
+            if(word=="Scenario"): idx_scenario = words.index(word)
     
     count+=1
     if not('HLT_' in line): continue
     words = line.split("\t")
+    if idx_scenario>=0:
+        if not(scenario in words[idx_scenario]): continue
     trigger = words[idx_path]
     alltriggers.add(trigger)
     groupString = words[idx_group]
