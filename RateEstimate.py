@@ -11,7 +11,7 @@ from datasetCrossSections.datasetCrossSectionsSpring15 import *
 folder = '/gpfs/ddn/srm/cms/store/user/sdonato/HLTRates_50ns_frozenV2p2_Spring15_V1'       # folder containing ntuples
 lumi =  5E33               # luminosity [s-1cm-2]
 multiprocess = 8           # number of processes
-pileupFilter = True        # use pile-up filter?
+pileupFilter = False        # use pile-up filter?
 pileupFilterGen = True    # use pile-up filter gen or L1?
 useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
@@ -92,6 +92,42 @@ def getTriggersListFromNtuple(chain,triggerListInNtuples):
                if (("HLT_" in name) or (evalL1 and ("L1_" in name))) and not ("Prescl" in name):
                 triggerListInNtuples.append(name)
 
+## get the prescale associated with a trigger from the ntuples
+def getPrescaleListInNtuples():                                                                               
+    prescales={}                                                                                                                   
+  # take the first "hltbit" file                                                                                                   
+    dirpath = ''                                                                                                                   
+    filenames = []                                                                                                                 
+    for dataset in datasetList:                                                                                                    
+        for (dirpath_, dirnames, filenames_) in walk(folder+'/'+dataset):                                                          
+            if len(filenames_)>0 and 'root' in filenames_[0]:                                                                      
+                filenames = filenames_                                                                                             
+                dirpath = dirpath_                                                                                                 
+                break                                                                                                              
+                                                                                                                                   
+    if len(filenames)==0:                                                                                                          
+        raise ValueError('No good file found in '+folder)                                                                          
+                                                                                                                                   
+    for filename in filenames:                                                                                                     
+        if 'hltbit' in filename: break                                                                                             
+                                                                                                                                   
+    _file0 = ROOT.TFile.Open(dirpath+'/'+filename)                                                                                 
+    chain = ROOT.gDirectory.Get("HltTree")                                                                                         
+                                                                                                                                   
+    for leaf in chain.GetListOfLeaves():                                                                                           
+        name = leaf.GetName()                                                                                                      
+        if (("HLT_" in name) or (evalL1 and ("L1_" in name))) and not ("Prescl" in name):                                          
+            trigger=name                                                                                                           
+            i=0                                                                                                                    
+            pname=name+'_Prescl'                                                                                                   
+            for event in chain:                                                                                                    
+                value=getattr(event,pname)                                                                                         
+                if (i==2): break                                                                                                   
+                i+=1                                                                                                               
+            prescales[trigger]=value                                                                                               
+
+    return prescales       
+
 ## set and fill totalEventsMatrix, passedEventsMatrix, rateTriggerTotal, squaredErrorRateTriggerTotal with zero
 def setToZero(totalEventsMatrix,passedEventsMatrix,triggerAndGroupList,rateTriggerTotal,squaredErrorRateTriggerTotal) :
     for dataset in xsectionDatasets:
@@ -137,9 +173,10 @@ def writeMatrixEvents(fileName,datasetList,triggerList,totalEventsMatrix,passedE
     f.close()
 
 ## read rateTriggerTotal and rateTriggerDataset and write a .tsv file containing the trigger rates
-def writeMatrixRates(fileName,datasetList,rateTriggerDataset,rateTriggerTotal,triggerList,writeGroup=False):
+def writeMatrixRates(fileName,prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,triggerList,writeGroup=False):
     f = open(fileName, 'w')
-    text = 'Path\t'
+    text = 'Prescale\t'
+    text += 'Path\t'
     if writeGroup: text += 'Group\t'
     text += 'Total\t\t\t'
     for dataset in datasetList:
@@ -150,6 +187,7 @@ def writeMatrixRates(fileName,datasetList,rateTriggerDataset,rateTriggerTotal,tr
 
     for trigger in triggerList:
         text += '\n'
+        text += str(prescaleList[trigger])+'\t'
         text +=  trigger+'\t'
         if writeGroup:
             for group in triggersGroupMap[trigger]:
@@ -418,6 +456,11 @@ setToZero(totalEventsMatrix,passedEventsMatrix,triggerAndGroupList,rateTriggerTo
 ## check trigger list in triggersGroupMap (ie. ~ Google doc), with trigger bits in ntuples (ie. GRun)
 triggerList = CompareGRunVsGoogleDoc(datasetList,triggerList,folder)
 
+## create a list with prescales associated to each HLT/L1 trigger path
+prescaleList = {}               # prescaleTriggerTotal[trigger] = prescale from Ntuple                                             
+prescaleList = getPrescaleListInNtuples()                                                                                             
+#print prescaleList       
+
 ## loop on dataset and fill matrix with event counts, rates, and squared errors
 for dataset in datasetList:
     fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerDataset,squaredErrorRateTriggerDataset)
@@ -451,10 +494,10 @@ if evalHLTgroups: writeMatrixEvents(filename+'_matrixEvents.groups.tsv',datasetL
 if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups.tsv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
 
 ## write files with  trigger rates
-if evalL1:writeMatrixRates(filename+'_L1_matrixRates.tsv',datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
-if evalHLTpaths: writeMatrixRates(filename+'_matrixRates.tsv',datasetList,rateTriggerDataset,rateTriggerTotal,HLTList,True)
-if evalHLTgroups: writeMatrixRates(filename+'_matrixRates.groups.tsv',datasetList,rateTriggerDataset,rateTriggerTotal,groupList)
-if evalHLTtwogroups: writeMatrixRates(filename+'_matrixRates.twogroups.tsv',datasetList,rateTriggerDataset,rateTriggerTotal,twoGroupsList)
+if evalL1:writeMatrixRates(filename+'_L1_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
+if evalHLTpaths: writeMatrixRates(filename+'_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,HLTList,True)
+if evalHLTgroups: writeMatrixRates(filename+'_matrixRates.groups.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,groupList)
+if evalHLTtwogroups: writeMatrixRates(filename+'_matrixRates.twogroups.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,twoGroupsList)
 
 
 ## print timing
