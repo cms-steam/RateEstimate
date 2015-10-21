@@ -3,15 +3,16 @@
 
 ########## Configuration #####################################################################
 
-from triggersGroupMap.triggersGroupMap__frozen_2015_50ns_5e33_v2p2_HLT_V2 import *
+from triggersGroupMap.triggersGroupMap__frozen_2015_25ns14e33_v4p4_HLT_V1 import *
 #from datasetCrossSections.datasetCrossSectionsPhys14 import *
 from datasetCrossSections.datasetCrossSectionsSpring15 import *
+#from datasetCrossSections.datasetLumiSectionsData import *
 
 #folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/STEAM/Phys14_50ns_mini/'       # folder containing ntuples
-folder = '/gpfs/ddn/srm/cms/store/user/sdonato/HLTRates_50ns_frozenV2p2_Spring15_V1'       # folder containing ntuples
-lumi =  5E33               # luminosity [s-1cm-2]
+folder = '/afs/cern.ch/user/g/georgia/eos/cms/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/HLTPhysics/HLTRates_2e33_25ns_V4p4_V1' 
+lumi =  2E33 #1               # luminosity [s-1cm-2]
 multiprocess = 8           # number of processes
-pileupFilter = False        # use pile-up filter?
+pileupFilter = True        # use pile-up filter?
 pileupFilterGen = True    # use pile-up filter gen or L1?
 useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
@@ -22,6 +23,7 @@ evalHLTgroups = False       # evaluate HLT triggers groups rates  ?
 evalHLTtwogroups = False   # evaluate the correlation among the HLT trigger groups rates?
 label = "rates_V1"         # name of the output files
 
+isData = False
 ###############################################################################################
 
 ##### Other configurations #####
@@ -388,8 +390,12 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
     
     ##fill passedEventsMatrix[] and totalEventsMatrix[]
     for trigger in triggerAndGroupList:
-        rateTriggerDataset [(dataset,trigger)] = rateDataset[dataset]/totalEventsMatrix[dataset]*passedEventsMatrix[(dataset,trigger)]
-        squaredErrorRateTriggerDataset [(dataset,trigger)] = rateDataset[dataset]*rateDataset[dataset]*passedEventsMatrix[(dataset,trigger)]/totalEventsMatrix[dataset]/totalEventsMatrix[dataset] # (rateDataset*sqrt(1.*passedEvents/nevents/nevents)) **2
+        if isData:
+            rateTriggerDataset[(dataset,trigger)] = passedEventsMatrix[(dataset,trigger)]/rateDataset[dataset]
+            squaredErrorRateTriggerDataset[(dataset,trigger)] = passedEventsMatrix[(dataset,trigger)]/(rateDataset[dataset]*rateDataset[dataset])
+        else:    
+            rateTriggerDataset [(dataset,trigger)] = rateDataset[dataset]/totalEventsMatrix[dataset]*passedEventsMatrix[(dataset,trigger)]
+            squaredErrorRateTriggerDataset [(dataset,trigger)] = rateDataset[dataset]*rateDataset[dataset]*passedEventsMatrix[(dataset,trigger)]/totalEventsMatrix[dataset]/totalEventsMatrix[dataset] # (rateDataset*sqrt(1.*passedEvents/nevents/nevents)) **2
     end = time.time()
     if log>1:
         if not skip: print "time(s) =",round((end - start),2)," total events=",totalEventsMatrix[dataset]," time per 10k events(s)=", round((end - start)*10000/totalEventsMatrix[dataset],2)
