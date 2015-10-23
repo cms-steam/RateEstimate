@@ -5,14 +5,14 @@
 
 from triggersGroupMap.triggersGroupMap__frozen_2015_25ns14e33_v4p4_HLT_V1 import *
 #from datasetCrossSections.datasetCrossSectionsPhys14 import *
-from datasetCrossSections.datasetCrossSectionsSpring15 import *
-#from datasetCrossSections.datasetLumiSectionsData import *
+#from datasetCrossSections.datasetCrossSectionsSpring15 import *
+from datasetCrossSections.datasetLumiSectionsData import *
 
 #folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/STEAM/Phys14_50ns_mini/'       # folder containing ntuples
-folder = '/afs/cern.ch/user/g/georgia/eos/cms/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/HLTPhysics/HLTRates_2e33_25ns_V4p4_V1' 
-lumi =  2E33 #1               # luminosity [s-1cm-2]
+folder = '/afs/cern.ch/user/g/georgia/eos/cms/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/HLTPhysics/HLTRates_2e33_25ns_V4p4_V1_georgia2' 
+lumi =  1 #2E33 #1               # luminosity [s-1cm-2]
 multiprocess = 8           # number of processes
-pileupFilter = True        # use pile-up filter?
+pileupFilter = False        # use pile-up filter?
 pileupFilterGen = True    # use pile-up filter gen or L1?
 useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
@@ -23,7 +23,11 @@ evalHLTgroups = False       # evaluate HLT triggers groups rates  ?
 evalHLTtwogroups = False   # evaluate the correlation among the HLT trigger groups rates?
 label = "rates_V1"         # name of the output files
 
-isData = False
+isData = True
+
+nLS = 958 # number of Lumi Sections run over data
+lenLS = 23
+psNorm = 232./4. # Prescale Normalization factor if running on HLTPhysics
 ###############################################################################################
 
 ##### Other configurations #####
@@ -305,7 +309,10 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
     
     ## get the cross section and the global rate of the dataset
     xsection = xsectionDatasets[dataset] #pb
-    rateDataset [dataset] = lumi*xsection*1E-24/1E12 # [1b = 1E-24 cm^2, 1b = 1E12pb ]
+    if isData:
+        rateDataset[dataset] = (1./psNorm)*lenLS*nLS*lumi*xsection
+    else:
+        rateDataset [dataset] = lumi*xsection*1E-24/1E12 # [1b = 1E-24 cm^2, 1b = 1E12pb ]
     
     ## check if the dataset belong to the (anti) QCD EM/Mu enriched dataset lists or it contains negative weights
     isEMEnriched = False
