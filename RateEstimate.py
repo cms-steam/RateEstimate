@@ -2,7 +2,6 @@
 # -*- coding: iso-8859-15 -*-
 
 ########## Configuration #####################################################################
-
 from triggersGroupMap.triggersGroupMap__frozen_2015_25ns14e33_v4p4_HLT_V1 import *
 #from datasetCrossSections.datasetCrossSectionsPhys14 import *
 #from datasetCrossSections.datasetCrossSectionsSpring15 import *
@@ -10,23 +9,25 @@ from datasetCrossSections.datasetLumiSectionsData import *
 
 #folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/STEAM/Phys14_50ns_mini/'       # folder containing ntuples
 folder = '/afs/cern.ch/user/g/georgia/eos/cms/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/HLTPhysics/HLTRates_2e33_25ns_V4p4_V1_georgia2' 
-lumi =  1 #2E33 #1               # luminosity [s-1cm-2]
+lumi =  1 #2E33              # luminosity [s-1cm-2]
 multiprocess = 8           # number of processes
 pileupFilter = False        # use pile-up filter?
 pileupFilterGen = True    # use pile-up filter gen or L1?
-useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
-useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
-evalL1 = True              # evaluate L1 triggers rates?
+useEMEnriched = False       # use plain QCD mu-enriched samples (Pt30to170)?
+useMuEnriched = False       # use plain QCD EM-enriched samples (Pt30to170)?
+evalL1 = False              # evaluate L1 triggers rates?
 evalHLTpaths = True        # evaluate HLT triggers rates?
-evalHLTgroups = False       # evaluate HLT triggers groups rates  ?
+evalHLTgroups = True       # evaluate HLT triggers groups rates  ?
 #evalHLTtwopaths = True    # evaluate the correlation among the HLT trigger paths rates?
 evalHLTtwogroups = False   # evaluate the correlation among the HLT trigger groups rates?
-label = "rates_V1"         # name of the output files
+label = "rates_v4p4_V1"         # name of the output files
 
 isData = True
+## L1Rate studies as a function of PU and number of bunches:
+evalL1scaling = False
 
-nLS = 958 # number of Lumi Sections run over data
-lenLS = 23
+nLS = 958 ## number of Lumi Sections run over data
+lenLS = 23.31 ## length of Lumi Section
 psNorm = 232./4. # Prescale Normalization factor if running on HLTPhysics
 ###############################################################################################
 
@@ -192,8 +193,11 @@ def writeMatrixRates(fileName,prescaleList,datasetList,rateTriggerDataset,rateTr
         text +=  datasetName + '\t\t\t'
 
     for trigger in triggerList:
+        print 'Trigger is '+str(trigger)
         text += '\n'
-        text += str(prescaleList[trigger])+'\t'
+        if (trigger not in groupList ):
+            text += str(prescaleList[trigger])+'\t'
+        else : text += ''+'\t'    
         text +=  trigger+'\t'
         if writeGroup:
             for group in triggersGroupMap[trigger]:
@@ -209,6 +213,36 @@ def writeMatrixRates(fileName,prescaleList,datasetList,rateTriggerDataset,rateTr
     f.write(text)
     f.close()
 
+## Use this for L1Rate studies (L1Rates scaling with luminosity and NofBunches); only if you use the new format of L1TriggersMap.
+def writeL1RateStudies(fileName,prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,triggerList,writeGroup=False):
+    f = open(fileName, 'w')
+    text = 'L1 path\t'
+    if writeGroup: text += 'Group\t'
+    text += 'Prescale\t'
+    text += 'Total Rate (Hz)\t\t\t'
+    
+## For each L1 configuration , prepare Rates scaled by the target luminosity:
+    text += '1e34\t\t\t'; text += '7e33\t\t\t'; text += '5e33\t\t\t'
+    text += '3.5e33\t\t\t'; text += '2e33\t\t\t'; text += '1e33\t\t\t' 
+    
+    for trigger in triggersL1GroupMap.keys():
+        text += '\n'
+        text +=  trigger+'\t'
+
+        if writeGroup:
+            text += str(triggersL1GroupMap[trigger][0])
+            text += '\t'
+        text += str(prescaleList[trigger])+'\t'
+        text += str(rateTriggerTotal[trigger])+'\t±\t'+str(sqrtMod(squaredErrorRateTriggerTotal[trigger]))+'\t'
+
+     ## For each L1 trigger that is not Masked, compute the ratio between the target and the original prescale:
+        for idx in range(2, 8):
+            ratio = int(triggersL1GroupMap[trigger][idx])/prescaleList[trigger]
+            text += str(ratio*rateTriggerTotal[trigger])+'\t±\t'+str(sqrtMod(squaredErrorRateTriggerTotal[trigger]))+'\t'
+
+    f.write(text)
+    f.close()
+    
 ## compare the trigger list from the ntuple and from triggersGroupMap*.py and print the difference
 def CompareGRunVsGoogleDoc(datasetList,triggerList,folder):
     # take the first "hltbit" file
@@ -507,7 +541,8 @@ if evalHLTgroups: writeMatrixEvents(filename+'_matrixEvents.groups.tsv',datasetL
 if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups.tsv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
 
 ## write files with  trigger rates
-if evalL1:writeMatrixRates(filename+'_L1_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
+if evalL1: writeMatrixRates(filename+'_L1_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
+if evalL1scaling: writeL1RateStudies(filename+'_L1RateStudies_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
 if evalHLTpaths: writeMatrixRates(filename+'_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,HLTList,True)
 if evalHLTgroups: writeMatrixRates(filename+'_matrixRates.groups.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,groupList)
 if evalHLTtwogroups: writeMatrixRates(filename+'_matrixRates.twogroups.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,twoGroupsList)
