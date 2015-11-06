@@ -193,11 +193,10 @@ def writeMatrixRates(fileName,prescaleList,datasetList,rateTriggerDataset,rateTr
         text +=  datasetName + '\t\t\t'
 
     for trigger in triggerList:
-        print 'Trigger is '+str(trigger)
         text += '\n'
         if (trigger not in groupList ):
             text += str(prescaleList[trigger])+'\t'
-        else : text += ''+'\t'    
+        else: text += ''+'\t'    
         text +=  trigger+'\t'
         if writeGroup:
             for group in triggersGroupMap[trigger]:
