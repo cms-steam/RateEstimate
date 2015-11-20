@@ -8,7 +8,7 @@ from triggersGroupMap.triggersGroupMap__frozen_2015_25ns14e33_v4p4_HLT_V1 import
 from datasetCrossSections.datasetLumiSectionsData import *
 
 #folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/STEAM/Phys14_50ns_mini/'       # folder containing ntuples
-folder = '/afs/cern.ch/user/g/georgia/eos/cms/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/HLTPhysics/HLTRates_2e33_25ns_V4p4_V1_georgia2' 
+folder = '/afs/cern.ch/user/v/vannerom/eos/cms/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/HLTPhysics/HLTRates_2e33_25ns_V4p4_V1_georgia2' 
 lumi =  1 #2E33              # luminosity [s-1cm-2]
 multiprocess = 8           # number of processes
 pileupFilter = False        # use pile-up filter?
@@ -53,6 +53,8 @@ from math import *
 from os import walk
 from os import mkdir
 from scipy.stats import binom
+
+ROOT.TFormula.SetMaxima(10000,10000,10000)
 
 ##### Function definition #####
 
@@ -302,7 +304,14 @@ def getEvents(input_):
        tree=ROOT.gDirectory.Get("HltTree")
     except:
         pass
-    
+   
+    i = 0
+    for leaf in tree.GetListOfLeaves():
+        triggerName = leaf.GetName()
+        if ("HLT_" in triggerName) and not ("Prescl" in triggerName):
+            tree.SetAlias("HLT_"+str(i),triggerName)
+            i += 1
+ 
     #if tree is defined, get totalEvents and passedEvents
     if (tree!=None): 
         totalEventsMatrix_ = tree.Draw("",denominatorString)
