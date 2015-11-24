@@ -69,3 +69,11 @@ for group1 in groupList:
 #            twoHLTsList.append(twoHLTs)
 #            twoHLTsTrigger="("+(getTriggerString[trigger1])+")&&("+(getTriggerString[trigger2])+")"
 #            getTriggerString[twoHLTs]=twoHLTsTrigger
+
+## Fill string for All group
+groupList.append('All')
+i = 0
+for trigger in HLTList:
+    if 'All' in getTriggerString.keys(): getTriggerString['All']+='||HLT_'+str(i)
+    else: getTriggerString['All']='HLT_0'
+    i += 1
