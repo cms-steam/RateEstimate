@@ -1,5 +1,5 @@
 triggersToRemove = [
-    # not in stream A
+    ## not in stream A
     'HLT_EcalCalibration_v',
     
     # use UTCA (not simulated in MC)
@@ -36,9 +36,9 @@ getTriggerString = {}
 ## Fill triggerList and groupList
 for trigger in triggersGroupMap.keys():
     if trigger[:-1] in triggersToRemove: continue
-    if not (trigger in triggerList) : triggerList.append(trigger)
+    if not (trigger in triggerList) : triggerList.append(trigger) 
     for group in triggersGroupMap[trigger]:
-        if not (group in groupList) : groupList.append(group)
+        if not (group in groupList) and not group.isdigit(): groupList.append(group)
 
 ## Fill HLTList and L1List
 for trigger in triggerList:
@@ -49,14 +49,15 @@ for trigger in triggerList:
 for trigger in triggerList:
     getTriggerString[trigger]=trigger
     for group in triggersGroupMap[trigger]:
-        if group in getTriggerString.keys(): getTriggerString[group]+='||'+trigger
-        else: getTriggerString[group]=trigger
+        if (group != "L1") and not group.isdigit():
+            if group in getTriggerString.keys(): getTriggerString[group]+='||'+trigger
+            else: getTriggerString[group]=trigger
 
 ## Fill twoGroupsList and getTriggerString
 for group1 in groupList:
     for group2 in groupList:
-        twoGroups = group1 + "-" + group2
-        if not (twoGroups in twoGroupsList):
+        if (not group1.isdigit()) and (not group2.isdigit()): twoGroups = group1 + "-" + group2
+        if not (twoGroups in twoGroupsList) and ("L1" not in twoGroups):
             twoGroupsList.append(twoGroups)
             twoGroupsTrigger="("+(getTriggerString[group1])+")&&("+(getTriggerString[group2])+")"
             getTriggerString[twoGroups]=twoGroupsTrigger
@@ -71,9 +72,17 @@ for group1 in groupList:
 #            getTriggerString[twoHLTs]=twoHLTsTrigger
 
 ## Fill string for All group
-groupList.append('All')
+groupList.append('All_HLT')
 i = 0
 for trigger in HLTList:
-    if 'All' in getTriggerString.keys(): getTriggerString['All']+='||HLT_'+str(i)
-    else: getTriggerString['All']='HLT_0'
+    if 'All_HLT' in getTriggerString.keys(): getTriggerString['All_HLT']+='||HLT_'+str(i)
+    else: getTriggerString['All_HLT']='HLT_0'
     i += 1
+
+## Creates the global OR string fot all L1 paths 
+i = 0
+for trigger in L1List:
+    if 'L1' in getTriggerString.keys(): getTriggerString['L1']+='||L1_'+str(i)
+    else: getTriggerString['L1']='L1_0'
+    i += 1
+
