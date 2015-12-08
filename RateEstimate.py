@@ -7,17 +7,21 @@ from triggersGroupMap.triggersGroupMap__frozen_2015_25ns14e33_v4p4_HLT_V1 import
 #from datasetCrossSections.datasetCrossSectionsSpring15 import *
 from datasetCrossSections.datasetLumiSectionsData import *
 
+batchSplit = False
+looping = False
+
 #folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/STEAM/Phys14_50ns_mini/'       # folder containing ntuples
 folder = '/afs/cern.ch/user/v/vannerom/eos/cms/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/HLTPhysics/HLTRates_2e33_25ns_V4p4_V1_georgia2' 
 lumi =  1 #2E33              # luminosity [s-1cm-2]
-multiprocess = 8           # number of processes
+if (batchSplit): multiprocess = 1           # number of processes
+else: multiprocess = 8
 pileupFilter = False        # use pile-up filter?
 pileupFilterGen = True    # use pile-up filter gen or L1?
 useEMEnriched = False       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = False       # use plain QCD EM-enriched samples (Pt30to170)?
-evalL1 = False              # evaluate L1 triggers rates?
-evalHLTpaths = True        # evaluate HLT triggers rates?
-evalHLTgroups = True       # evaluate HLT triggers groups rates  ?
+evalL1 = True              # evaluate L1 triggers rates?
+evalHLTpaths = False        # evaluate HLT triggers rates?
+evalHLTgroups = True       # evaluate HLT triggers groups rates and global HLT and L1 rates
 #evalHLTtwopaths = True    # evaluate the correlation among the HLT trigger paths rates?
 evalHLTtwogroups = False   # evaluate the correlation among the HLT trigger groups rates?
 label = "rates_v4p4_V1"         # name of the output files
@@ -30,6 +34,15 @@ nLS = 958 ## number of Lumi Sections run over data
 lenLS = 23.31 ## length of Lumi Section
 psNorm = 232./4. # Prescale Normalization factor if running on HLTPhysics
 ###############################################################################################
+
+##### Adding an option to the code #####
+
+if batchSplit:
+    from optparse import OptionParser
+    parser=OptionParser()
+
+    parser.add_option("-n","--number",dest="fileNumber",default="0",type="int") # python file.py -n N => options.fileNumber is N
+    (options,args)=parser.parse_args()
 
 ##### Other configurations #####
 
@@ -54,7 +67,7 @@ from os import walk
 from os import mkdir
 from scipy.stats import binom
 
-ROOT.TFormula.SetMaxima(10000,10000,10000)
+ROOT.TFormula.SetMaxima(10000,10000,10000) # Allows to extend the number of operators in a root TFormula. Needed to evaluate the .Draw( ,OR string) in the GetEvents function
 
 ##### Function definition #####
 
@@ -170,7 +183,7 @@ def writeMatrixEvents(fileName,datasetList,triggerList,totalEventsMatrix,passedE
         text +=  trigger+'\t'
         if writeGroup:
             for group in triggersGroupMap[trigger]:
-                text += group+','
+                if not group.isdigit(): text += group+','
         
             text=text[:-1] ##remove the last comma
             text += '\t'
@@ -202,7 +215,7 @@ def writeMatrixRates(fileName,prescaleList,datasetList,rateTriggerDataset,rateTr
         text +=  trigger+'\t'
         if writeGroup:
             for group in triggersGroupMap[trigger]:
-                text += group+','
+                if not group.isdigit(): text += group+','
         
             text=text[:-1] ##remove the last comma
             text += '\t'
@@ -304,28 +317,108 @@ def getEvents(input_):
        tree=ROOT.gDirectory.Get("HltTree")
     except:
         pass
+
+    ##### "Draw" method
+    if not looping:
    
-    i = 0
-    for leaf in tree.GetListOfLeaves():
-        triggerName = leaf.GetName()
-        if ("HLT_" in triggerName) and not ("Prescl" in triggerName):
-            tree.SetAlias("HLT_"+str(i),triggerName)
-            i += 1
+        # Creating aliases for HLT paths branches in the tree in order to reduce the length of the global OR string
+        i = 0
+        for leaf in tree.GetListOfLeaves():
+            triggerName = leaf.GetName()
+            if ("HLT_" in triggerName) and not ("Prescl" in triggerName):
+                tree.SetAlias("HLT_"+str(i),triggerName)
+                i += 1
+        # Creating aliases for L1 paths branches in the tree in order to reduce the length of the global OR string
+        i = 0
+        for leaf in tree.GetListOfLeaves():
+            triggerName = leaf.GetName()
+            if ("L1_" in triggerName) and not ("Prescl" in triggerName) and not ("HLT_" in triggerName):
+                tree.SetAlias("L1_"+str(i),triggerName)
+                i += 1
  
-    #if tree is defined, get totalEvents and passedEvents
-    if (tree!=None): 
-        totalEventsMatrix_ = tree.Draw("",denominatorString)
-        if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSign<0)&&("+denominatorString+")")
-        for trigger in triggerAndGroupList:
-            passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString[trigger]+')&&('+filterString+')')
-            if withNegativeWeights: passedEventsMatrix_[trigger] = passedEventsMatrix_[trigger] - 2*tree.Draw("",'(MCWeightSign<0)&&('+getTriggerString[trigger]+')&&('+filterString+')')
+        #if tree is defined, get totalEvents and passedEvents
+        if (tree!=None): 
+            totalEventsMatrix_ = tree.Draw("",denominatorString)
+            if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSign<0)&&("+denominatorString+")")
+            for trigger in triggerAndGroupList:
+                passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString[trigger]+')&&('+filterString+')')
+                if withNegativeWeights: passedEventsMatrix_[trigger] = passedEventsMatrix_[trigger] - 2*tree.Draw("",'(MCWeightSign<0)&&('+getTriggerString[trigger]+')&&('+filterString+')')
         
-        _file0.Close()
-    else:  #if tree is not undefined/empty set enties to zero
-        totalEventsMatrix_ = 0
-        for trigger in triggerAndGroupList:
-            passedEventsMatrix_[trigger] = 0
+            _file0.Close()
+        else:  #if tree is not undefined/empty set enties to zero
+            totalEventsMatrix_ = 0
+            for trigger in triggerAndGroupList:
+                passedEventsMatrix_[trigger] = 0
     
+    ##### Looping method
+    else:
+        #if tree is defined, get totalEvents and passedEvents
+        if (tree!=None):
+            totalEventsMatrix_ = tree.Draw("",denominatorString)
+            if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSign<0)&&("+denominatorString+")")
+
+            N = tree.GetEntries()
+            if evalHLTpaths: passedEventsMatrix_['All_HLT'] = 0
+            if evalL1: passedEventsMatrix_['L1'] = 0
+
+            HLTNames = []
+            L1Names = []
+            L1PrescDict = {}
+            i = 0
+            for leaf in tree.GetListOfLeaves():
+                triggerName = leaf.GetName()
+                if (evalHLTpaths) and ("HLT_" in triggerName) and not ("Prescl" in triggerName):
+                    HLTNames.append(triggerName)
+                elif (evalL1) and ("L1_" in triggerName) and not ("HLT_" in triggerName) and not ("Prescl" in triggerName):
+                    L1Names.append(triggerName)
+
+            presclFromMap = False
+            lumiColumn = 1
+            # Filling the prescale dictionary using the map
+            if (presclFromMap):
+                for trigger in triggersL1GroupMap.keys():
+                    L1PrescDict[trigger] = triggersL1GroupMap[trigger][lumiColumn]
+            # Filling the prescale dictionary using the tree
+            else:
+                for event in tree:
+                    for trigger in L1Names: L1PrescDict[trigger] = getattr(event,trigger+'_Prescl')
+                    break
+         
+            # Looping over the events to compute the global rate
+            for event in tree:
+                HLTCount = 0
+                L1Count = 0
+                L1Presc = 0
+                if HLTNames:
+                    for trigger in HLTNames:
+                        HLTCount = getattr(event,trigger)
+                        if (HLTCount==1):# and filterString==1):
+                            passedEventsMatrix_['All_HLT'] += 1
+                            break
+                if L1Names:
+                    for trigger in L1Names:
+                        L1Count = getattr(event,trigger)
+                        if (L1Count==1) and ((float(i)%L1PrescDict[trigger])==0):# and filterString==1):
+                            passedEventsMatrix_['L1'] += 1
+                            break
+
+            # Using the "Draw" method for the HLT and L1 individual paths part because it is more efficient and there will be no problem with the string length
+            if evalHLTpaths:
+                for trigger in HLTList:
+                    passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString[trigger]+')&&('+filterString+')')
+            if evalL1:
+                for trigger in L1List:
+                    passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString[trigger]+')&&('+filterString+')')
+            # Using the "Draw" method for the group part because it is more efficient and there will be no problem with the string length
+            for group in groupList:
+                if (group != 'All_HLT') and (group != 'L1'):
+                    passedEventsMatrix_[group] = tree.Draw("",'('+getTriggerString[group]+')&&('+filterString+')')
+        else:  #if chain is not undefined/empty set entries to zero
+            totalEventsMatrix_ = 0
+            for trigger in triggerAndGroupList:
+                passedEventsMatrix_[trigger] = 0
+
+
     return passedEventsMatrix_,totalEventsMatrix_
 
 ## fill the matrixes of the number of events and the rates for each dataset and trigger
@@ -415,9 +508,13 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
     
     ## prepare the input for getEvents((filepath,filterString,denominatorString))
     inputs = []
+    i = 0
     if not skip:
         for filename in filenames:
-            inputs.append((dirpath+'/'+filename,filterString,denominatorString,withNegativeWeights))
+            if(batchSplit):
+                if(i==options.fileNumber): inputs.append((dirpath+'/'+filename,filterString,denominatorString,withNegativeWeights))
+            else: inputs.append((dirpath+'/'+filename,filterString,denominatorString,withNegativeWeights))
+            i += 1
     
     ## evaluate the number of events that pass the trigger with getEvents()
     if multiprocess>1:
@@ -487,6 +584,8 @@ if multiprocess>1:
 ### initialization ###
 # fill triggerAndGroupList with the objects that you want to measure the rate (HLT+L1+HLTgroup+HLTtwogroup)
 triggerAndGroupList=[]
+if not evalL1: groupList.remove('L1')
+if not evalHLTpaths : groupList.remove('All_HLT')
 if evalHLTpaths:        triggerAndGroupList=triggerAndGroupList+HLTList
 if evalHLTgroups:       triggerAndGroupList=triggerAndGroupList+groupList
 #if evalHLTtwopaths:     triggerAndGroupList=triggerAndGroupList+twoHLTsList
@@ -526,7 +625,8 @@ for dataset in datasetList:
             rateTriggerTotal[trigger] += rateTriggerDataset[(dataset,trigger)]
             squaredErrorRateTriggerTotal[trigger] += squaredErrorRateTriggerDataset[(dataset,trigger)]
 
-filename = 'Results/'
+if batchSplit: filename = 'ResultsBatch/'
+else: filename = 'Results/'
 filename += label
 filename += "_"+triggerName
 filename += "_"+str(lumi).replace("+","")
@@ -537,23 +637,43 @@ if pileupFilter:
 if useEMEnriched: filename += '_EMEn'
 if useMuEnriched: filename += '_MuEn'
 
-try:
-    mkdir("Results")
-except:
-    pass
 
-## write files with events count
-if evalL1: writeMatrixEvents(filename+'_L1.matrixEvents.tsv',datasetList,L1List,totalEventsMatrix,passedEventsMatrix,True)
-if evalHLTpaths: writeMatrixEvents(filename+'_matrixEvents.tsv',datasetList,HLTList,totalEventsMatrix,passedEventsMatrix,True)
-if evalHLTgroups: writeMatrixEvents(filename+'_matrixEvents.groups.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix)
-if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups.tsv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
+if batchSplit:
+    try:
+        mkdir("ResultsBatch")
+    except:
+        pass
 
-## write files with  trigger rates
-if evalL1: writeMatrixRates(filename+'_L1_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
-##if evalL1scaling: writeL1RateStudies(filename+'_L1RateStudies_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
-if evalHLTpaths: writeMatrixRates(filename+'_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,HLTList,True)
-if evalHLTgroups: writeMatrixRates(filename+'_matrixRates.groups.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,groupList)
-if evalHLTtwogroups: writeMatrixRates(filename+'_matrixRates.twogroups.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,twoGroupsList)
+    ### write files with events count
+    if evalL1: writeMatrixEvents(filename+'_L1.matrixEvents'+str(options.fileNumber)+'.tsv',datasetList,L1List,totalEventsMatrix,passedEventsMatrix,True)
+    if evalHLTpaths: writeMatrixEvents(filename+'_matrixEvents'+str(options.fileNumber)+'.tsv',datasetList,HLTList,totalEventsMatrix,passedEventsMatrix,True)
+    if evalHLTgroups: writeMatrixEvents(filename+'_matrixEvents.groups'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix)
+    if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups'+str(options.fileNumber)+'.tsv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
+
+    ### write files with  trigger rates
+    if evalL1:writeMatrixRates(filename+'_L1_matrixRates'+str(options.fileNumber)+'.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
+    if evalHLTpaths: writeMatrixRates(filename+'_matrixRates'+str(options.fileNumber)+'.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,HLTList,True)
+    if evalHLTgroups: writeMatrixRates(filename+'_matrixRates.groups'+str(options.fileNumber)+'.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,groupList)
+    if evalHLTtwogroups: writeMatrixRates(filename+'_matrixRates.twogroups'+str(options.fileNumber)+'.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,twoGroupsList)
+
+else:
+    try:
+        mkdir("Results")
+    except:
+        pass
+
+    ## write files with events count
+    if evalL1: writeMatrixEvents(filename+'_L1.matrixEvents.tsv',datasetList,L1List,totalEventsMatrix,passedEventsMatrix,True)
+    if evalHLTpaths: writeMatrixEvents(filename+'_matrixEvents.tsv',datasetList,HLTList,totalEventsMatrix,passedEventsMatrix,True)
+    if evalHLTgroups: writeMatrixEvents(filename+'_matrixEvents.groups.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix)
+    if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups.tsv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
+
+    ## write files with  trigger rates
+    if evalL1: writeMatrixRates(filename+'_L1_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
+    ##if evalL1scaling: writeL1RateStudies(filename+'_L1RateStudies_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
+    if evalHLTpaths: writeMatrixRates(filename+'_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,HLTList,True)
+    if evalHLTgroups: writeMatrixRates(filename+'_matrixRates.groups.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,groupList)
+    if evalHLTtwogroups: writeMatrixRates(filename+'_matrixRates.twogroups.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,twoGroupsList)
 
 
 ## print timing
