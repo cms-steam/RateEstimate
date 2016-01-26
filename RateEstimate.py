@@ -7,7 +7,7 @@ from triggersGroupMap.triggersGroupMap__frozen_2015_25ns14e33_v4p4_HLT_V1 import
 #from datasetCrossSections.datasetCrossSectionsSpring15 import *
 from datasetCrossSections.datasetLumiSectionsData import *
 
-batchSplit = False
+batchSplit = True
 looping = False
 
 #folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/STEAM/Phys14_50ns_mini/'       # folder containing ntuples
@@ -19,11 +19,11 @@ pileupFilter = False        # use pile-up filter?
 pileupFilterGen = True    # use pile-up filter gen or L1?
 useEMEnriched = False       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = False       # use plain QCD EM-enriched samples (Pt30to170)?
-evalL1 = True              # evaluate L1 triggers rates?
+evalL1 = False              # evaluate L1 triggers rates?
 evalHLTpaths = False        # evaluate HLT triggers rates?
-evalHLTgroups = True       # evaluate HLT triggers groups rates and global HLT and L1 rates
+evalHLTgroups = False       # evaluate HLT triggers groups rates and global HLT and L1 rates
 #evalHLTtwopaths = True    # evaluate the correlation among the HLT trigger paths rates?
-evalHLTtwogroups = False   # evaluate the correlation among the HLT trigger groups rates?
+evalHLTtwogroups = True   # evaluate the correlation among the HLT trigger groups rates?
 label = "rates_v4p4_V1"         # name of the output files
 
 isData = True
@@ -66,6 +66,7 @@ from math import *
 from os import walk
 from os import mkdir
 from scipy.stats import binom
+import math
 
 ROOT.TFormula.SetMaxima(10000,10000,10000) # Allows to extend the number of operators in a root TFormula. Needed to evaluate the .Draw( ,OR string) in the GetEvents function
 
@@ -209,7 +210,7 @@ def writeMatrixRates(fileName,prescaleList,datasetList,rateTriggerDataset,rateTr
 
     for trigger in triggerList:
         text += '\n'
-        if (trigger not in groupList ):
+        if (trigger not in groupList) and (trigger not in twoGroupsList):
             text += str(prescaleList[trigger])+'\t'
         else: text += ''+'\t'    
         text +=  trigger+'\t'
@@ -335,12 +336,22 @@ def getEvents(input_):
             if ("L1_" in triggerName) and not ("Prescl" in triggerName) and not ("HLT_" in triggerName):
                 tree.SetAlias("L1_"+str(i),triggerName)
                 i += 1
- 
+        # Creating aliases for HLT paths branches in the tree in order to reduce the length of the group strings
+        groupAliasCounter = {}
+        for leaf in tree.GetListOfLeaves():
+            triggerName = leaf.GetName()
+            if ("HLT_" in triggerName) and not ("Prescl" in triggerName):
+                for group in triggersGroupMap[triggerName]:
+                    if not group in groupAliasCounter.keys(): groupAliasCounter[group] = 0
+                    else: groupAliasCounter[group] += 1
+                    tree.SetAlias(group+"_"+str(groupAliasCounter[group]),triggerName)
+                    #print "trigger = ",triggerName," , alias = ",group,"_",str(groupAliasCounter[group])
+
         #if tree is defined, get totalEvents and passedEvents
         if (tree!=None): 
             totalEventsMatrix_ = tree.Draw("",denominatorString)
             if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSign<0)&&("+denominatorString+")")
-            for trigger in triggerAndGroupList:
+            for trigger in triggerAndGroupList: 
                 passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString[trigger]+')&&('+filterString+')')
                 if withNegativeWeights: passedEventsMatrix_[trigger] = passedEventsMatrix_[trigger] - 2*tree.Draw("",'(MCWeightSign<0)&&('+getTriggerString[trigger]+')&&('+filterString+')')
         
@@ -535,13 +546,41 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
     if totalEventsMatrix[dataset]==0:   totalEventsMatrix[dataset]=1
     
     ##fill passedEventsMatrix[] and totalEventsMatrix[]
+    if evalHLTtwogroups:
+        f = ROOT.TFile("twoGroupsCorrelations.root","recreate")
+        ROOT.gStyle.SetOptStat(0)
+        GroupCorrelHisto = ROOT.TH2F('GroupCorrelHisto','Overlapping rates for group pairs', 21, 0, 21, 21, 0, 21)
+        i = 0
+        j = 0
+        L2g = len(twoGroupsList)
+        N2g = (-1+math.pow(1+(8*L2g),0.5))/2
     for trigger in triggerAndGroupList:
         if isData:
             rateTriggerDataset[(dataset,trigger)] = passedEventsMatrix[(dataset,trigger)]/rateDataset[dataset]
             squaredErrorRateTriggerDataset[(dataset,trigger)] = passedEventsMatrix[(dataset,trigger)]/(rateDataset[dataset]*rateDataset[dataset])
+            if evalHLTtwogroups:
+                if trigger in twoGroupsList: 
+                    if(i<N2g and j<N2g):
+                        GroupCorrelHisto.SetBinContent(i,j,rateTriggerDataset[(dataset,trigger)])
+                        i += 1
+                    elif(i==N2g and j<(N2g-1)):
+                        i = j+1
+                        j += 1
+                        GroupCorrelHisto.SetBinContent(i,j,rateTriggerDataset[(dataset,trigger)])
+                        i += 1
         else:    
             rateTriggerDataset [(dataset,trigger)] = rateDataset[dataset]/totalEventsMatrix[dataset]*passedEventsMatrix[(dataset,trigger)]
             squaredErrorRateTriggerDataset [(dataset,trigger)] = rateDataset[dataset]*rateDataset[dataset]*passedEventsMatrix[(dataset,trigger)]/totalEventsMatrix[dataset]/totalEventsMatrix[dataset] # (rateDataset*sqrt(1.*passedEvents/nevents/nevents)) **2
+    if evalHLTtwogroups:
+        i = 1
+        for group in groupList:
+            if group != "Masked":
+                GroupCorrelHisto.GetXaxis().SetBinLabel(i,group)
+                GroupCorrelHisto.GetXaxis().LabelsOption("v")
+                GroupCorrelHisto.GetYaxis().SetBinLabel(i,group)
+                GroupCorrelHisto.GetYaxis().LabelsOption("v")
+                i += 1
+        f.Write()
     end = time.time()
     if log>1:
         if not skip: print "time(s) =",round((end - start),2)," total events=",totalEventsMatrix[dataset]," time per 10k events(s)=", round((end - start)*10000/totalEventsMatrix[dataset],2)
@@ -596,6 +635,9 @@ if evalL1:              triggerAndGroupList=triggerAndGroupList+L1List
 triggerList=[]
 if evalHLTpaths:        triggerList=triggerList+HLTList
 if evalL1:              triggerList=triggerList+L1List
+## check trigger list in triggersGroupMap (ie. ~ Google doc), with trigger bits in ntuples (ie. GRun)
+if evalHLTpaths or evalL1: triggerList = CompareGRunVsGoogleDoc(datasetList,triggerList,folder)
+
 
 # define dictionaries
 passedEventsMatrix = {}                 #passedEventsMatrix[(dataset,trigger)] = events passed by a trigger in a dataset
@@ -606,9 +648,6 @@ squaredErrorRateTriggerDataset = {}     #squaredErrorRateTriggerDataset[(dataset
 rateTriggerTotal = {}                   #rateTriggerTotal[(dataset,trigger)] = total rate of a trigger
 squaredErrorRateTriggerTotal = {}       #squaredErrorRateTriggerTotal[trigger] = squared error on the rate
 setToZero(totalEventsMatrix,passedEventsMatrix,triggerAndGroupList,rateTriggerTotal,squaredErrorRateTriggerTotal)  #fill all dictionaries with zero
-
-## check trigger list in triggersGroupMap (ie. ~ Google doc), with trigger bits in ntuples (ie. GRun)
-triggerList = CompareGRunVsGoogleDoc(datasetList,triggerList,folder)
 
 ## create a list with prescales associated to each HLT/L1 trigger path
 prescaleList = {}               # prescaleTriggerTotal[trigger] = prescale from Ntuple                                             
