@@ -193,7 +193,7 @@ def mergeRates(input_dir,output_name,L1write):
 
     if not L1write:
         return
-    HLTdic=getHLTmenuSteam('HLTmenu.csv')
+    HLTdic=getHLTmenuSteam(Menuname)
     for j in xrange (0,Nlines):
         for i in xrange(0,len(datasetList)+4):
             #print i," ",rateList[i][0]
@@ -287,6 +287,7 @@ def getHLTmenuSteam(steamFile):
         with open(steamFile) as csvfile:
             steamReader=csv.reader(csvfile)
             for line in steamReader:
+                print line
                 path = line[file3_hltpath].split("_v")[0]
                 path = path.strip()
     
@@ -324,8 +325,9 @@ def getHLTmenuSteam(steamFile):
                 if (file3_l1path > 0):
                     L1path = line[file3_l1path].split(' OR ')
                     L1pre = ''
-                    L1pretotal = 1
-                    hltpre = int(line[file3_hltprescale])
+                    L1pretotal = -1
+                    hltpre = int(line[file3_hltprescale].replace('\xe2\x80\x86',''))
+                    hltpre = -1
                     for i in range(len(L1path)):
                         if L1path[i] in HLTl1predic:
                             if i == 0:
@@ -333,7 +335,7 @@ def getHLTmenuSteam(steamFile):
                             else:
                                 L1pre = L1pre + '|' +str(HLTl1predic[L1path[i]])
                             #L1pretotal*=int(HLTl1predic[L1path[i]])
-                            L1pretotal=int(line[file3_l1prescale])
+                            L1pretotal=int(line[file3_l1prescale].replace('\xe2\x80\x86',''))
                             if L1pretotal == 0:
                                 L1pretotal =1
 
@@ -345,6 +347,25 @@ def getHLTmenuSteam(steamFile):
                 hltmenu[path]=(line[file3_l1path],L1pre,float(L1pretotal),hltpre)
 
     return hltmenu#,HLTl1predic
+
+def downloadmenu(linkToGoogleDOC):
+    nameMenu = "_frozen_2015_25ns14e33_v4.4_HLT_V2"
+    try:    
+        os.mkdir('tmp')
+    except:
+        pass
+    ### Download the googleDOC in .tsv format ###
+    if "edit#gid=0" in linkToGoogleDOC:
+        linkToGoogleDOC = linkToGoogleDOC[:-10]
+
+    linkToGoogleDOCsplitted=linkToGoogleDOC.split("/")
+    code = linkToGoogleDOCsplitted[len(linkToGoogleDOCsplitted)-2]
+    linkToGoogleDOCtsv = linkToGoogleDOC + "export?format=tsv&id=" + code + "&gid=0"
+    command = 'wget -O tmp/'+nameMenu+".tsv "+linkToGoogleDOCtsv
+    filename = 'tmp/'+nameMenu+'.tsv'
+    print command
+    os.popen(command,'r').read()
+    return filename
 
 menu_lumibiasdic={
 '1e33':3,
@@ -365,11 +386,11 @@ file4_l1path = 1           #L1_
 file4_l1prescale = 0     #l1 prescale
 
 
-
-
-
+#start~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Menuname=downloadmenu('https://docs.google.com/spreadsheets/d/1Xka2ltnQ0-aT-r62M54ThY_2Bdxj6QDk5gCb0kVsrB0/edit#gid=0')
 
 #mergeRates("/afs/cern.ch/user/x/xgao/work/RateEstimate_mc_22_02_16/1e34/ResultsBatch_23to27/","Results/mergedRates_MC_23to27.tsv",True)
 mergeRates("/afs/cern.ch/user/x/xgao/work/RateEstimate_mc_22_02_16/1e34/ResultsBatch_28to32/","Results/mergedRates_MC_28to32.tsv",True)
 
 #my_print(datasetList)
+
