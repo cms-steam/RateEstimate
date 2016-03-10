@@ -628,7 +628,7 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
     
     denominatorString = '1'
     if isData and runNo!='0':
-        filterString+="&&(Run=="+runNo+")"   
+        denominatorString+="&&(Run=="+runNo+")"   
     ## if useEMEnriched and is EMEnriched, apply EM cut 
     if useEMEnriched and isEMEnriched:
         filterString += '&& '+EM_cut
