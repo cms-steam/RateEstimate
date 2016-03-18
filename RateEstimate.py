@@ -775,8 +775,8 @@ if multiprocess>1:
 ### initialization ###
 # fill triggerAndGroupList with the objects that you want to measure the rate (HLT+L1+HLTgroup+HLTtwogroup)
 triggerAndGroupList=[]
-#if not evalL1: groupList.remove('L1')
-#if not evalHLTpaths : groupList.remove('All_HLT')
+if not evalL1: groupList.remove('L1')
+if not evalHLTpaths : groupList.remove('All_HLT')
 if evalHLTpaths:        triggerAndGroupList=triggerAndGroupList+HLTList
 if evalHLTgroups:       triggerAndGroupList=triggerAndGroupList+groupList
 #if evalHLTtwopaths:     triggerAndGroupList=triggerAndGroupList+twoHLTsList
