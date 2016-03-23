@@ -870,17 +870,17 @@ else:
         pass
 
     ## write files with events count
-    if evalL1: writeMatrixEvents(filename+'_L1.matrixEvents.tsv',datasetList,datasetUsedList,L1List,totalEventsMatrix,passedEventsMatrix,True)
-    if evalHLTpaths: writeMatrixEvents(filename+'_matrixEvents.tsv',datasetList,datasetUsedList,HLTList,totalEventsMatrix,passedEventsMatrix,True)
-    if evalHLTgroups: writeMatrixEvents(filename+'_matrixEvents.groups.tsv',datasetList,datasetUsedList,groupList,totalEventsMatrix,passedEventsMatrix)
-    if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups.tsv',datasetList,datasetUsedList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
+    if evalL1: writeMatrixEvents(filename+'_L1.matrixEvents.tsv',datasetList,L1List,totalEventsMatrix,passedEventsMatrix,True)
+    if evalHLTpaths: writeMatrixEvents(filename+'_matrixEvents.tsv',datasetList,HLTList,totalEventsMatrix,passedEventsMatrix,True)
+    if evalHLTgroups: writeMatrixEvents(filename+'_matrixEvents.groups.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix)
+    if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups.tsv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
 
     ## write files with  trigger rates
-    if evalL1: writeMatrixRates(filename+'_L1_matrixRates.tsv',prescaleList,datasetList,datasetUsedList,rateTriggerDataset,rateTriggerTotal,L1List,True)
-    ##if evalL1scaling: writeL1RateStudies(filename+'_L1RateStudies_matrixRates.tsv',prescaleList,datasetList,datasetUsedList,rateTriggerDataset,rateTriggerTotal,L1List,True)
-    if evalHLTpaths: writeMatrixRates(filename+'_matrixRates.tsv',prescaleList,datasetList,datasetUsedList,rateTriggerDataset,rateTriggerTotal,HLTList,True)
-    if evalHLTgroups: writeMatrixRates(filename+'_matrixRates.groups.tsv',prescaleList,datasetList,datasetUsedList,rateTriggerDataset,rateTriggerTotal,groupList)
-    if evalHLTtwogroups: writeMatrixRates(filename+'_matrixRates.twogroups.tsv',prescaleList,datasetList,datasetUsedList,rateTriggerDataset,rateTriggerTotal,twoGroupsList)
+    if evalL1: writeMatrixRates(filename+'_L1_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
+    ##if evalL1scaling: writeL1RateStudies(filename+'_L1RateStudies_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
+    if evalHLTpaths: writeMatrixRates(filename+'_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,HLTList,True)
+    if evalHLTgroups: writeMatrixRates(filename+'_matrixRates.groups.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,groupList)
+    if evalHLTtwogroups: writeMatrixRates(filename+'_matrixRates.twogroups.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,twoGroupsList)
 
 
 ## print timing
