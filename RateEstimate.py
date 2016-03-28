@@ -93,7 +93,7 @@ def runCommand(commandLine):
     retVal = subprocess.Popen(args, stdout = subprocess.PIPE)
     return retVal
 
-def lsl(file_or_path):
+def lsl(file_or_path,my_filelist):
     '''
     List EOS file/directory content, returning the information found in 'eos ls -l'.
     The output is a list of dictionaries with the following entries:
@@ -113,7 +113,7 @@ def lsl(file_or_path):
     #print "status = ", status
     if status != 0:
         raise IOError("File/path = %s does not exist !!" % file_or_path)
-
+    
     retVal = []
     for line in stdout.splitlines():
         fields = line.split()
@@ -134,10 +134,20 @@ def lsl(file_or_path):
                 "%b %d %H:%M %Y")
         else:
             file_info['time'] = time.strptime(time_stamp, "%b %d %Y")
-        file_info['path'] = os.path.join(directory, file_info['file'])
+        file_info['path'] = file_or_path
         #print "file_info = " % file_info
         retVal.append(file_info)
-    return retVal
+        my_filelist.append(file_info)
+        tmp_path=file_info['path']+'/'+file_info['file']
+        if not '.' in tmp_path[-5:]:
+            isdir=True
+        else:
+            isdir=False
+        #print "is dir: ", isdir
+        #print "file_info =", file_info
+        if isdir and not 'log' in tmp_path:
+            lsl(file_info['path']+'/'+file_info['file'],my_filelist)
+    return
 
 ## modified square root to avoid error
 def sqrtMod(x):
@@ -188,36 +198,32 @@ def getPrescaleListInNtuples():
   # take the first "hltbit" file                                                                                                   
     dirpath = ''                                                                                                                   
     filenames = []                                                                                                                 
-    for dataset in datasetList:                                                                                                    
+    for dataset in datasetList:
         datasetName = dataset
         noRootFile = True
         onlyFail = False
         walking_folder = folder+"/"+datasetName
-        while noRootFile and not onlyFail:
-            eosDirContent = lsl(walking_folder)
-            for key in eosDirContent:
-                if (("failed" in str(key['file'])) or ("log" in str(key['file']))):
-                    onlyFail = True
-                    continue
-                elif ("root" in str(key['file'])):
-                    filenames.append(str(key['file']))
-                    dirpath = "root://eoscms//eos/cms/"+walking_folder
-                    noRootFile = False
-                    onlyFail = False
-                    break
-                else: 
-                    walking_folder += "/"+key['file']
-                    onlyFail = False
-                    break
+        eosDirContent = []
+        lsl(walking_folder,eosDirContent)
+        for key in eosDirContent:
+            if (("failed" in str(key['path'])) or ("log" in str(key['path']))):
+                onlyFail = True
+                continue
+            elif ("root" in str(key['file'])):
+                filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
+                dirpath = "root://eoscms//eos/cms/"+walking_folder
+                noRootFile = False
+                onlyFail = False
+                break
         if len(filenames)>0: break
-                                                                                                                                  
+ 
     if len(filenames)==0:                                                                                                          
         raise ValueError('No good file found in '+folder)                                                                          
                                                                                                                                    
     for filename in filenames:                                                                                                     
         if 'hltbit' in filename: break                                                                                             
                                                                                                                                    
-    _file0 = ROOT.TFile.Open(dirpath+'/'+filename)                                                                                 
+    _file0 = ROOT.TFile.Open(filename)                                                                                 
     chain = ROOT.gDirectory.Get("HltTree")                                                                                         
                                                                                                                                    
     for leaf in chain.GetListOfLeaves():                                                                                           
@@ -360,31 +366,26 @@ def CompareGRunVsGoogleDoc(datasetList,triggerList,folder):
         noRootFile = True
         onlyFail = False
         walking_folder = folder+"/"+datasetName
-        while noRootFile and not onlyFail:
-            eosDirContent = lsl(walking_folder)
-            for key in eosDirContent:
-                if (("failed" in str(key['file'])) or ("log" in str(key['file']))):
-                    onlyFail = True
-                    continue
-                elif ("root" in str(key['file'])):
-                    filenames.append(str(key['file']))
-                    dirpath = "root://eoscms//eos/cms/"+walking_folder
-                    noRootFile = False
-                    onlyFail = False
-                    break
-                else:
-                    walking_folder += "/"+key['file']
-                    onlyFail = False
-                    break
-        if len(filenames)>0: break
-    
+        eosDirContent = []
+        lsl(walking_folder,eosDirContent)
+        for key in eosDirContent:
+            if (("failed" in str(key['path'])) or ("log" in str(key['path']))):
+                onlyFail = True
+                continue
+            elif ("root" in str(key['file'])):
+                filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
+                dirpath = "root://eoscms//eos/cms/"+walking_folder
+                noRootFile = False
+                onlyFail = False
+                break
+        if len(filenames)>0: break 
     if len(filenames)==0:
         raise ValueError('No good file found in '+folder)
     
     for filename in filenames:
         if 'hltbit' in filename: break
     
-    _file0 = ROOT.TFile.Open(dirpath+'/'+filename)
+    _file0 = ROOT.TFile.Open(filename)
     chain = ROOT.gDirectory.Get("HltTree")
     
     # get trigger bits and make a comparison with google DOC
@@ -417,8 +418,8 @@ def CompareGRunVsGoogleDoc(datasetList,triggerList,folder):
 
 ## given filepath, the filter string to use at the numerator and denominator, get the number of events that pass the triggers
 def getEvents(input_):
-    print "Entered getEvents()"
     (filepath,filterString,denominatorString,withNegativeWeights) = input_
+    print "Entered getEvents()",filepath
     passedEventsMatrix_={}
     #try to open the file and get the TTree
     tree = None
@@ -427,7 +428,6 @@ def getEvents(input_):
     
     ##### "Draw" method
     if not looping:
-   
         # Creating aliases for HLT paths branches in the tree in order to reduce the length of the global OR string
         i = 0
         for leaf in tree.GetListOfLeaves():
@@ -464,7 +464,7 @@ def getEvents(input_):
             else:
                 totalEventsMatrix_ = tree.Draw("",'('+denominatorString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
                 if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("",'(MCWeightSign<0)&&('+denominatorString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
-                for trigger in triggerAndGroupList: 
+                for trigger in triggerAndGroupList:
                     passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString[trigger]+')&&('+filterString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
                     if withNegativeWeights: passedEventsMatrix_[trigger] = passedEventsMatrix_[trigger] - 2*tree.Draw("",'(MCWeightSign<0)&&('+getTriggerString[trigger]+')&&('+filterString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
             _file0.Close()
@@ -558,17 +558,14 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
     filenames=[]
     noRootFile = True
     walking_folder = folder+"/"+dataset
-    while noRootFile:
-        eosDirContent = lsl(walking_folder)
-        for key in eosDirContent:
-            if (("failed" in str(key['file'])) or ("log" in str(key['file']))): continue
-            if ("root" in str(key['file'])):
-                filenames.append(str(key['file']))
-                dirpath = "root://eoscms//eos/cms"+walking_folder
-                noRootFile = False
-            else:
-                walking_folder += "/"+key['file']
-                break
+    eosDirContent=[]
+    lsl(walking_folder,eosDirContent)
+    for key in eosDirContent:
+        if (("failed" in str(key['path'])) or ("log" in str(key['file']))): continue
+        if (".root" in str(key['file'])):
+            filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
+            dirpath = "root://eoscms//eos/cms"+walking_folder
+            noRootFile = False
  
     ## print an error if a dataset is missing
     if batchSplit:
@@ -644,8 +641,8 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
         if not skip:
             print
             print '#'*10,"Dataset:",dataset,'#'*30
-            print "Loading folder:",dirpath
-            print "First file:",dirpath+'/'+filenames[0]
+            print "Loading folder:",walking_folder
+            print "First file:",filenames[0]
             print "nfiles =",len(filenames)
             print "total rate of dataset =",rateDataset [dataset]
             print "using numerator filter:",filterString
@@ -660,17 +657,17 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
         inputs = []
         i = 1
         for filename in filenames:
-            fileTest = ROOT.TFile.Open(dirpath+'/'+filename)
+            fileTest = ROOT.TFile.Open(filename)
             if fileTest:
                 if(batchSplit):
                     if(i==options.fileNumber):
                         print "file ",i," (",filename,") added to inputs"
-                        inputs.append((dirpath+'/'+filename,filterString,denominatorString,withNegativeWeights))
+                        inputs.append((filename,filterString,denominatorString,withNegativeWeights))
                         break
                     elif(options.fileNumber==-1):
                         print "file ",i," (",filename,") added to inputs"
-                        inputs.append((dirpath+'/'+filename,filterString,denominatorString,withNegativeWeights))
-                else: inputs.append((dirpath+'/'+filename,filterString,denominatorString,withNegativeWeights))
+                        inputs.append((filename,filterString,denominatorString,withNegativeWeights))
+                else: inputs.append((filename,filterString,denominatorString,withNegativeWeights))
             i += 1
  
         ## evaluate the number of events that pass the trigger with getEvents()

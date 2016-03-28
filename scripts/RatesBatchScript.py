@@ -1,10 +1,11 @@
-import ROOT
 import time
 import datetime
 import os
 import shlex
 import subprocess
-from datasetCrossSections.datasetCrossSectionsSpring15_updatedFilterEff import *
+import sys
+sys.path.append("../datasetCrossSections")
+from datasetCrossSectionsSpring15_updatedFilterEff import *
 
 
 MYDIR='/afs/cern.ch/work/x/xgao/RateEstimate_mc_22_02_16/1e34'
@@ -19,7 +20,7 @@ def runCommand(commandLine):
     retVal = subprocess.Popen(args, stdout = subprocess.PIPE)
     return retVal
 
-def lsl(file_or_path):
+def lsl(file_or_path,my_filelist):
     executable_eos = '/afs/cern.ch/project/eos/installation/cms/bin/eos.select'
     '''
     List EOS file/directory content, returning the information found in 'eos ls -l'.
@@ -61,10 +62,20 @@ def lsl(file_or_path):
                 "%b %d %H:%M %Y")
         else:
             file_info['time'] = time.strptime(time_stamp, "%b %d %Y")
-        file_info['path'] = os.path.join(directory, file_info['file'])
+        file_info['path'] = file_or_path
         #print "file_info = " % file_info
         retVal.append(file_info)
-    return retVal
+        my_filelist.append(file_info)
+        tmp_path=file_info['path']+'/'+file_info['file']
+        if not '.' in tmp_path[-5:]:
+            isdir=True
+        else:
+            isdir=False
+        #print "is dir: ", isdir
+        #print "file_info =", file_info
+        if isdir and not 'log' in tmp_path:
+            lsl(file_info['path']+'/'+file_info['file'],my_filelist)
+    return
 
 
 
@@ -73,17 +84,14 @@ def getdatasetfilenum(dataset):
     filenames=[]
     noRootFile = True
     walking_folder = folder+"/"+dataset
-    while noRootFile:
-        eosDirContent = lsl(walking_folder)
-        for key in eosDirContent:
-            if (("failed" in str(key['file'])) or ("log" in str(key['file']))): continue
-            if ("root" in str(key['file'])):
-                filenames.append(str(key['file']))
-                dirpath = "root://eoscms//eos/cms"+walking_folder
-                noRootFile = False
-            else:
-                walking_folder += "/"+key['file']
-                break
+    eosDirContent=[]
+    lsl(walking_folder,eosDirContent)
+    for key in eosDirContent:
+        if (("failed" in str(key['path'])) or ("log" in str(key['file']))): continue
+        if (".root" in str(key['file'])):
+            filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
+            dirpath = "root://eoscms//eos/cms"+walking_folder
+            noRootFile = False
 #    print filenames
     return len(filenames)
 
