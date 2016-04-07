@@ -7,8 +7,8 @@ from triggersGroupMap.triggersGroupMap__frozen_2015_25ns14e33_v4p4_HLT_V1 import
 from datasetCrossSections.datasetCrossSectionsSpring15_updatedFilterEff import *
 #from datasetCrossSections.datasetLumiSectionsData import *
 
-batchSplit = False
-looping = False
+batchSplit = True
+looping = True
 
 ##### Adding an option to the code #####
 
@@ -30,19 +30,19 @@ folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Spring
 lumi = 2E33              # luminosity [s-1cm-2]
 if (batchSplit): multiprocess = 1           # number of processes
 else: multiprocess = 1 # 8 multiprocessing disbaled for now because of incompatibilities with the way the files are accessed. Need some development.
-pileupMAX = 12
-pileupMIN = 8
+pileupMAX = 23
+pileupMIN = 19
 pileupFilter = True        # use pile-up filter?
 pileupFilterGen = True    # use pile-up filter gen or L1?
 useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
 evalL1 = False              # evaluate L1 triggers rates?
 evalHLTpaths = True        # evaluate HLT triggers rates?
-evalHLTgroups = True       # evaluate HLT triggers groups rates and global HLT and L1 rates
+evalHLTgroups = False       # evaluate HLT triggers groups rates and global HLT and L1 rates
 #evalHLTtwopaths = True    # evaluate the correlation among the HLT trigger paths rates?
 evalHLTtwogroups = False   # evaluate the correlation among the HLT trigger groups rates?
 label = "rates_MC_v4p4_V1"         # name of the output files
-runNo = "260627"           #if runNo='0', means code will run for all Run.
+runNo = "0"           #if runNo='0', means code will run for all Run.
 
 
 isData = False
@@ -477,8 +477,8 @@ def getEvents(input_):
     else:
         #if tree is defined, get totalEvents and passedEvents
         if (tree!=None):
-            totalEventsMatrix_ = tree.Draw("",denominatorString)
-            if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSign<0)&&("+denominatorString+")")
+            totalEventsMatrix_ = tree.Draw("",'('+denominatorString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
+            if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSign<0)&&("+denominatorString+")&&(NPUTrueBX0<="+str(pileupMAX)+")&&(NPUTrueBX0>="+str(pileupMIN)+")")
 
             N = tree.GetEntries()
             if evalHLTpaths: passedEventsMatrix_['All_HLT'] = 0
@@ -506,39 +506,46 @@ def getEvents(input_):
                 for event in tree:
                     for trigger in L1Names: L1PrescDict[trigger] = getattr(event,trigger+'_Prescl')
                     break
-         
-            # Looping over the events to compute the global rate
+        
+            for trigger in triggerAndGroupList:
+                passedEventsMatrix_[trigger] = 0
+
+            filterList = filterString.split("&&")
+            i = 0
+            for filterSplit in filterList:
+                filterList[i] = filterSplit.replace(" ","")
+                filterList[i] = filterList[i].replace("(","")
+                filterList[i] = filterList[i].replace(")","")
+                i += 1
+ 
+            # Looping over the events to compute the rates
+            u = 0
             for event in tree:
-                HLTrun = getattr(event,"Run")
-                if(HLTrun!=int(runNo)):
-                    continue
+                if u==1000: break
+                u += 1
+                PUevent = getattr(event,"NPUTrueBX0")
+                if (PUevent>pileupMAX or PUevent<pileupMIN): continue
                 HLTCount = 0
                 L1Count = 0
                 L1Presc = 0
-                if HLTNames:
-                    for trigger in HLTNames:
-                        HLTCount = getattr(event,trigger)
-                        if (HLTCount==1):# and filterString==1):
-                            passedEventsMatrix_['All_HLT'] += 1
-                            break
-                if L1Names:
-                    for trigger in L1Names:
-                        L1Count = getattr(event,trigger)
-                        if (L1Count==1) and ((float(i)%L1PrescDict[trigger])==0):# and filterString==1):
-                            passedEventsMatrix_['L1'] += 1
-                            break
+                filterFloat = 1
+                stringMemory = ""
+                for i in xrange(0,len(filterList)):
+                    if filterList[i]!="1":
+                        if ("!" in filterList[i]) and ("!!" not in filterList[i]):
+                            stringMemory = filterList[i].replace("!","")
+                            filterFloat = filterFloat*(1-getattr(event,stringMemory))
+                        elif ("!!" in filterList[i]):
+                            stringMemory = filterList[i].replace("!!","")
+                            filterFloat = filterFloat*(1-((1-getattr(event,stringMemory))*getattr(event,filterList[i+1])))
+                        else:
+                            if ("!!" in filterList[i-1]): continue
+                            else: filterFloat = filterFloat*getattr(event,filterList[i])
+                for trigger in triggerAndGroupList:
+                    HLTCount = getattr(event,trigger)
+                    if (HLTCount==1 and filterFloat==1):
+                        passedEventsMatrix_[trigger] += 1
 
-            # Using the "Draw" method for the HLT and L1 individual paths part because it is more efficient and there will be no problem with the string length
-            if evalHLTpaths:
-                for trigger in HLTList:
-                    passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString[trigger]+')&&('+filterString+')')
-            if evalL1:
-                for trigger in L1List:
-                    passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString[trigger]+')&&('+filterString+')')
-            # Using the "Draw" method for the group part because it is more efficient and there will be no problem with the string length
-            for group in groupList:
-                if (group != 'All_HLT') and (group != 'L1'):
-                    passedEventsMatrix_[group] = tree.Draw("",'('+getTriggerString[group]+')&&('+filterString+')')
         else:  #if chain is not undefined/empty set entries to zero
             totalEventsMatrix_ = 0
             for trigger in triggerAndGroupList:
