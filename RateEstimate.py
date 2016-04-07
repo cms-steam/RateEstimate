@@ -7,8 +7,8 @@ from triggersGroupMap.triggersGroupMap__frozen_2015_25ns14e33_v4p4_HLT_V1 import
 from datasetCrossSections.datasetCrossSectionsSpring15_updatedFilterEff import *
 #from datasetCrossSections.datasetLumiSectionsData import *
 
-batchSplit = True
-looping = True
+batchSplit = False
+looping = False
 
 ##### Adding an option to the code #####
 
