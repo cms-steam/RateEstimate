@@ -166,7 +166,7 @@ for j in xrange (0,Nlines):
             denominator = TotalEventsPerDataset[datasetListFromFile[i-4]] 
             if denominator==0: denominator = 1
             TotalRateList[j] += rateList[i][j]/denominator
-            TotalErrorList[j] += ((rateDataset[datasetListFromFile[i-4]]*rateList[i][j])/denominator/denominator)**2
+            TotalErrorList[j] += ((rateDataset[datasetListFromFile[i-4]]*rateList[i][j])/denominator/denominator)
 
 ### Filling up the new .tsv file with the content of the python list
 for j in xrange (0,Nlines):
