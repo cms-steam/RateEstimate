@@ -10,7 +10,6 @@ from datasetCrossSections.datasetLumiSectionsData import *
 batchSplit = False
 looping = True
 folder = '/afs/cern.ch/user/x/xgao/CMSSW_8_0_3_patch1/src/RateEstimate/259721'
-#folder = '/afs/cern.ch/user/x/xgao/CMSSW_8_0_3_patch1/src/MyTests/localtest'
 lumi =  1#2E33              # luminosity [s-1cm-2]
 if (batchSplit): multiprocess = 1           # number of processes
 else: multiprocess = 8
