@@ -27,7 +27,7 @@ if batchSplit:
 #folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/HLTPhysics/HLTRates_2e33_25ns_V4p4_V1_georgia2' 
 folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Spring15/Hui_HLTRates_2e33_25ns_V4p4_V1'
 #folder = '/afs/cern.ch/user/v/vannerom/eos/cms/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Spring15/Hui_HLTRates_2e33_25ns_V4p4_V1_last_round_perhaps'
-lumi = 2E33              # luminosity [s-1cm-2]
+lumi = 2E33              # luminosity [s-1cm-2], only used in MC ntuples.
 if (batchSplit): multiprocess = 1           # number of processes
 else: multiprocess = 1 # 8 multiprocessing disbaled for now because of incompatibilities with the way the files are accessed. Need some development.
 pileupMAX = 23
@@ -593,7 +593,7 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
     ## get the cross section and the global rate of the dataset
     xsection = xsectionDatasets[dataset] #pb
     if isData:
-        rateDataset[dataset] = (1./psNorm)*lenLS*nLS*lumi*xsection
+        rateDataset[dataset] = (1./psNorm)*lenLS*nLS*xsection
     else:
         print "lumi = ",lumi," xsection = ",xsection
         rateDataset [dataset] = lumi*xsection*1E-24/1E12 # [1b = 1E-24 cm^2, 1b = 1E12pb ]
