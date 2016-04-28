@@ -1,5 +1,5 @@
 # -*- coding: iso-8859-15 -*-
-triggerList = []
+
 triggerName = "GRun_V58_modifiable"
 
 triggersDatasetMap = {
@@ -514,7 +514,6 @@ triggersDatasetMap = {
 	'HLT_Mu7p5_Track3p5_Upsilon_v2': ['MuOnia'],
 	'HLT_DoubleMu8_Mass8_PFHT300_v4': ['DoubleMuon'],
 	'HLT_Mu23NoFiltersNoVtx_Photon23_CaloIdL_v2': ['MuonEG'],
-	'\r\n': [''],
 	'HLT_Mu17_Mu8_v1': ['DoubleMuon'],
 	'HLT_PFHT200_v2': ['JetHT']
 }
@@ -1031,7 +1030,6 @@ triggersGroupMap = {
 	'HLT_Mu7p5_Track3p5_Upsilon_v2': ['null'],
 	'HLT_DoubleMu8_Mass8_PFHT300_v4': ['null'],
 	'HLT_Mu23NoFiltersNoVtx_Photon23_CaloIdL_v2': ['null'],
-	'\r\n': ['null'],
 	'HLT_Mu17_Mu8_v1': ['null'],
 	'HLT_PFHT200_v2': ['null']
 }
@@ -1124,10 +1122,10 @@ twoDatasetsList = []
 getTriggerString = {}
 
 ## Fill triggerList and groupList and datasetList
-for trigger in triggersDatasetMap.keys():
+for trigger in triggersDatasetMap.keys(): 
     #if trigger[:-1] in triggersToRemove: continue
     if not (trigger in triggerList) : triggerList.append(trigger) 
-    for group in triggersGroupMap[trigger]:
+    for group in triggersGroupMap[trigger]: 
         if not group in groupList: groupList.append(group)
     for dataset in triggersDatasetMap[trigger]:
         if not dataset in primaryDatasetList: primaryDatasetList.append(dataset)
@@ -1138,14 +1136,38 @@ for trigger in triggerList:
 #    elif "L1_" in trigger: L1List.append(trigger)
 
 ## Fill getTriggerString get a map from trigger and group names to strings
+#for trigger in triggerList:
+#    getTriggerString[trigger]=trigger
+#    for dataset in triggersDatasetMap[trigger]:
+#        if dataset in getTriggerString.keys(): getTriggerString[dataset]+='||'+trigger
+#        else: getTriggerString[dataset]=trigger
+#    for group in triggersGroupMap[trigger]:
+#        if group in getTriggerString.keys(): getTriggerString[group]+='||'+trigger
+#        else: getTriggerString[group]=trigger
+
+## Aliases
+groupAliasCounter = {}
+datasetAliasCounter = {}
 for trigger in triggerList:
     getTriggerString[trigger]=trigger
-    for dataset in triggersDatasetMap[trigger]:
-        if dataset in getTriggerString.keys(): getTriggerString[dataset]+='||'+trigger
-        else: getTriggerString[dataset]=trigger
     for group in triggersGroupMap[trigger]:
-        if group in getTriggerString.keys(): getTriggerString[group]+='||'+trigger
-        else: getTriggerString[group]=trigger
+        if (group != "L1") and (group != "Masked") and not group.isdigit():
+            if group in getTriggerString.keys():
+                groupAliasCounter[group] += 1
+                getTriggerString[group]+='||'+group+"_"+str(groupAliasCounter[group])
+            else:
+                groupAliasCounter[group] = 0
+                getTriggerString[group]=group+"_0"
+        elif (group == "Masked"):
+            if group in getTriggerString.keys(): getTriggerString[group]+='||'+trigger
+            else: getTriggerString[group]=trigger
+    for dataset in triggersDatasetMap[trigger]:
+        if dataset in getTriggerString.keys(): 
+            datasetAliasCounter[dataset] += 1
+            getTriggerString[dataset]+='||'+dataset+"_"+str(datasetAliasCounter[dataset])
+        else:
+            datasetAliasCounter[dataset] = 0
+            getTriggerString[dataset]=dataset+"_0"
 
 ## Fill twoGroupsList and getTriggerString
 #for group1 in groupList:
@@ -1166,12 +1188,12 @@ for trigger in triggerList:
 #            getTriggerString[twoHLTs]=twoHLTsTrigger
 
 ## Fill string for All group
-primaryDataset.append('All_HLT')
+#primaryDatasetList.append('All_HLT')
 groupList.append('All_HLT')
 i = 0
 for trigger in HLTList:
-    if 'All_HLT' in getTriggerString.keys(): getTriggerString['All_HLT']+='||HLT_'+str(i)
-    else: getTriggerString['All_HLT']='HLT_0'
+    if 'All_HLT' in getTriggerString.keys(): getTriggerString['All_HLT']+='||All_HLT_'+str(i)
+    else: getTriggerString['All_HLT']='All_HLT_0'
     i += 1
 
 ## Creates the global OR string fot all L1 paths 
