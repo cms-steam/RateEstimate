@@ -211,10 +211,47 @@ for line in tmpStream:
     fileOut.write(line)
 fileOut.write('\n')
 tmpStream.close()
-#L1TriggersFile = open(L1Triggers,"r")
-#for line in L1TriggersFile:
-#    fileOut.write(line)
-#L1TriggersFile.close
+
+linkToL1GoogleDOCsplitted=linkToL1GoogleDOC.split("/")
+L1code = linkToL1GoogleDOCsplitted[len(linkToL1GoogleDOCsplitted)-2]
+print "L1 CODE :",L1code
+L1lastDigits = linkToL1GoogleDOCsplitted[len(linkToL1GoogleDOCsplitted)-1].split("=")
+print L1lastDigits[1]
+linkToL1GoogleDOCtsv = ""
+for i in xrange(0,len(linkToL1GoogleDOCsplitted)-1):
+    linkToL1GoogleDOCtsv += linkToL1GoogleDOCsplitted[i]+"/"
+linkToL1GoogleDOCtsv += "export?format=tsv&id=" + L1code + "&gid="+str(L1lastDigits[1])
+print linkToL1GoogleDOCtsv
+command = 'wget -O tmp/'+nameMenu+"_L1.tsv "+linkToL1GoogleDOCtsv
+print command
+os.popen(command,'r').read()
+
+lines_L1 = open("tmp/"+nameMenu+"_L1.tsv")
+tmp_L1 = open("tmp/tmp_L1.py","w")
+L1Map = {}
+
+for line in lines_L1:
+    words=line.split("\t")
+    for word in words:
+        if ("L1_" in word) and not ("#" in word): L1Map[word] = "L1"
+for trigger in L1Map.keys():
+    L1Map[trigger] = L1Map[trigger].split(",")
+
+lines_L1.close()
+print >> tmp_L1, L1Map
+tmp_L1.close()
+tmp_L1 = open("tmp/tmp_L1.py","r")
+
+fileOut.write('\n')
+fileOut.write("L1Map = ")
+for line in tmp_L1:
+    line = line.replace('], ', '],\n\t')
+    line = line.replace('{', '{\n\t')
+    line = line.replace('}', '\n}')
+    fileOut.write(line)
+fileOut.write('\n')
+tmp_L1.close()
+
 tail = open("config/triggerDatasetMapTail.py","r")
 for line in tail:
     fileOut.write(line)
