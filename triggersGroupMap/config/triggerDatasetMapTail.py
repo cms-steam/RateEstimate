@@ -23,7 +23,22 @@ triggersToRemove = [
     'HLT_Physics_v',
 ]
 
-#triggersGroupMap = dict(triggersGroupMap.items() + triggersL1GroupMap.items())
+triggersToRemoveFromTotalRate = [
+    # PPD triggers
+#    'HLT_HT2000_v',
+#    'HLT_HT2500_v',
+#    'HLT_MET250_v',
+#    'HLT_MET300_v',
+#    'HLT_MET600_v',
+#    'HLT_MET700_v',
+#    'HLT_Mu350_v',
+#    'HLT_PFMET300_v',
+#    'HLT_PFMET400_v',
+#    'HLT_PFMET500_v',
+#    'HLT_PFMET600_v',
+#    'HLT_Photon500_v',
+#    'HLT_Photon600_v',
+]
 
 triggerList = []
 L1List = []
@@ -77,18 +92,18 @@ for trigger in triggerList:
 #            getTriggerString[twoHLTs]=twoHLTsTrigger
 
 ## Fill string for All group
-primaryDatasetList.append('All_HLT')
-groupList.append('All_HLT')
+
+groupList.append('All_HLT_paths')
+groupList.append('All_HLT_aliases')
+
 i = 0
 for trigger in HLTList:
-    if 'All_HLT' in getTriggerString.keys(): getTriggerString['All_HLT']+='||HLT_'+str(i)
-    else: getTriggerString['All_HLT']='HLT_0'
+    if (trigger in triggersToRemoveFromTotalRate) or (trigger in triggersToRemove): continue
+    if 'All_HLT_aliases' in getTriggerString.keys(): getTriggerString['All_HLT_aliases']+='||HLT_'+str(i)
+    else: getTriggerString['All_HLT_aliases']='HLT_0'
     i += 1
 
-## Creates the global OR string fot all L1 paths 
-#i = 0
-#for trigger in L1List:
-#    if 'L1' in getTriggerString.keys(): getTriggerString['L1']+='||L1_'+str(i)
-#    else: getTriggerString['L1']='L1_0'
-#    i += 1
-
+for trigger in HLTList:
+    if (trigger in triggersToRemoveFromTotalRate) or (trigger in triggersToRemove): continue
+    if 'All_HLT_paths' in getTriggerString.keys(): getTriggerString['All_HLT_paths']+='||'+trigger
+    else: getTriggerString['All_HLT_paths']=trigger

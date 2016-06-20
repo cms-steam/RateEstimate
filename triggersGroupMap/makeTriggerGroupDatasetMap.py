@@ -5,10 +5,14 @@
 
 ### 25ns example from frozen 25ns GoogleDOC menu ###
 #nameMenu = "/frozen/2015/25ns14e33/v3.3/HLT/V2"
-nameMenu = "GRun_V58/modifiable"
+nameMenu = "GRun_V113"
 #linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1BkgAHCC4UtP5sddTZ5G5iWY16BxleuK7rqT-Iz2LHiM/edit#gid=0"       #link to 25ns frozen menu (17/08/2015)
-linkToGoogleDOC="https://docs.google.com/spreadsheets/d/14niSkIWrug2HSgN-ddrpk5TF2S8zFeHkopjxHAnb7nk/edit#gid=1670905758"
-L1Triggers = "config/triggersGroupMap_L1Menu_Collisions2015_25nsStage1_v3.py"
+#linkToGoogleDOC="https://docs.google.com/spreadsheets/d/14niSkIWrug2HSgN-ddrpk5TF2S8zFeHkopjxHAnb7nk/edit#gid=1670905758"
+#linkToGoogleDOC="https://docs.google.com/spreadsheets/d/1FtGoP4PG_ZKK7ISogvDZ0uqphsbyonWZNVDYX9s1wfY/edit#gid=0"
+linkToGoogleDOC = "https://docs.google.com/spreadsheets/d/1tPGICrMRtrMkhvEB0OuCtKEbn7Hzm3Mp8DWsUdm-CxU/edit#gid=0"
+#linkToL1GoogleDOC = "https://docs.google.com/spreadsheets/d/1s9g6xqRxB7Rq9ra89XsBrSnrB9Myy3pB7tl1jJh5h4c/edit#gid=185928513"
+#linkToL1GoogleDOC = "https://docs.google.com/spreadsheets/d/1EAeTPouAlycZTw7YgCGq944DX1wCsxFf0WLgsPTr2HI/edit#gid=1137477406"
+linkToL1GoogleDOC = "https://docs.google.com/spreadsheets/d/1Vo_KtE3QbmyAhC5tZ7GKI8PSpAjgea-JKKsAO3X4AuI/edit#gid=80545610"
 
 #### 50ns example from frozen 50ns GoogleDOC menu ###
 #nameMenu = "online/collisions/2015/50ns_5e33/v3.4/HLT/V2"
@@ -103,9 +107,9 @@ alltriggers=set()
 stream = ""
 dataset = ""
 for line in lines:
-    if(count<2):
-        count+=1
-        continue
+    #if(count<2):
+    #    count+=1
+    #    continue
     words=line.split("\t")
     
     for word in words:
@@ -130,7 +134,7 @@ for line in lines:
                 if trigger not in triggerList:
                     triggerList.append(trigger)
                     triggerMap[trigger]=dataset
-                    triggerGroupMap[trigger] = "null"
+                    triggerGroupMap[trigger] = words[idx_group]#"null"
                 else: triggerMap[trigger]+=','+dataset
                 break
 
@@ -211,6 +215,10 @@ for line in tmpStream:
     fileOut.write(line)
 fileOut.write('\n')
 tmpStream.close()
+#L1TriggersFile = open(L1Triggers,"r")
+#for line in L1TriggersFile:
+#    fileOut.write(line)
+#L1TriggersFile.close
 
 linkToL1GoogleDOCsplitted=linkToL1GoogleDOC.split("/")
 L1code = linkToL1GoogleDOCsplitted[len(linkToL1GoogleDOCsplitted)-2]
@@ -230,9 +238,9 @@ lines_L1 = open("tmp/"+nameMenu+"_L1.tsv")
 tmp_L1 = open("tmp/tmp_L1.py","w")
 L1Map = {}
 
-for line in lines_L1:
+for line in lines_L1: 
     words=line.split("\t")
-    for word in words:
+    for word in words:    
         if ("L1_" in word) and not ("#" in word): L1Map[word] = "L1"
 for trigger in L1Map.keys():
     L1Map[trigger] = L1Map[trigger].split(",")
