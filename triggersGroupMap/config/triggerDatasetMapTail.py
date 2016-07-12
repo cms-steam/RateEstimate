@@ -24,6 +24,22 @@ triggersToRemove = [
 ]
 
 triggersToRemoveFromTotalRate = [
+    'AlCa_',
+    'DST_',
+    #'HLT_EcalCalibration_v',
+    'HLT_HcalCalibration_v',
+    'HLT_HT410to430_v',
+    'HLT_HT430to450_v',
+    'HLT_HT450to470_v',
+    'HLT_HT470to500_v',
+    'HLT_HT500to550_v',
+    'HLT_HT550to650_v',
+    'HLT_HT650_v',
+    'HLT_L1FatEvents_part0_v',
+    'HLT_L1FatEvents_part1_v',
+    'HLT_L1FatEvents_part2_v',
+    'HLT_L1FatEvents_part3_v',
+
     # PPD triggers
 #    'HLT_HT2000_v',
 #    'HLT_HT2500_v',
