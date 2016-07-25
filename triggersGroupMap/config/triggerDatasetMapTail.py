@@ -1,32 +1,8 @@
+
 triggersToRemove = [
-    ## not in stream A
+    'DST_*',
+    'AlCa_*',
     'HLT_EcalCalibration_v',
-    
-    # use UTCA (not simulated in MC)
-    'HLT_HcalUTCA_v',
-    
-    # use NZS (not simulated in MC)
-    'HLT_HcalPhiSym_v',
-    'HLT_HcalNZS_v',
-    
-    # fake triggers
-    'HLT_BCToEFilter_v',
-    'HLT_RemovePileUpDominatedEventsGen_v',
-    'HLT_RemovePileUpDominatedEvents_v',
-    'HLT_EmFilter_v',
-    'HLT_EmGlobalFilter_v',
-    'HLT_MuFilter_v',
-    'HLT_MuFilterTP_v',
-
-    # trigger without L1 seeds
-    'HLT_Random_v',
-    'HLT_Physics_v',
-]
-
-triggersToRemoveFromTotalRate = [
-    'AlCa_',
-    'DST_',
-    #'HLT_EcalCalibration_v',
     'HLT_HcalCalibration_v',
     'HLT_HT410to430_v',
     'HLT_HT430to450_v',
@@ -39,22 +15,14 @@ triggersToRemoveFromTotalRate = [
     'HLT_L1FatEvents_part1_v',
     'HLT_L1FatEvents_part2_v',
     'HLT_L1FatEvents_part3_v',
-
-    # PPD triggers
-#    'HLT_HT2000_v',
-#    'HLT_HT2500_v',
-#    'HLT_MET250_v',
-#    'HLT_MET300_v',
-#    'HLT_MET600_v',
-#    'HLT_MET700_v',
-#    'HLT_Mu350_v',
-#    'HLT_PFMET300_v',
-#    'HLT_PFMET400_v',
-#    'HLT_PFMET500_v',
-#    'HLT_PFMET600_v',
-#    'HLT_Photon500_v',
-#    'HLT_Photon600_v',
+    'HLT_L1FatEvents_v',
+    'HLT_Physics_v',
+    'HLT_Random_v'
+    
 ]
+
+
+#triggersGroupMap = dict(triggersGroupMap.items())
 
 triggerList = []
 L1List = []
@@ -69,10 +37,11 @@ getTriggerString = {}
 for trigger in triggersDatasetMap.keys():
     #if trigger[:-1] in triggersToRemove: continue
     if not (trigger in triggerList) : triggerList.append(trigger)
-    for group in triggersGroupMap[trigger]:
-        if not group in groupList: groupList.append(group)
     for dataset in triggersDatasetMap[trigger]:
         if not dataset in primaryDatasetList: primaryDatasetList.append(dataset)
+    if (trigger in triggersToRemove) or (trigger[:-1] in triggersToRemove) or (trigger.split('_')[0]+'_*' in triggersToRemove): continue
+    for group in triggersGroupMap[trigger]:
+        if not group in groupList: groupList.append(group)
 
 ## Fill HLTList and L1List
 for trigger in triggerList:
@@ -85,41 +54,47 @@ for trigger in triggerList:
     for dataset in triggersDatasetMap[trigger]:
         if dataset in getTriggerString.keys(): getTriggerString[dataset]+='||'+trigger
         else: getTriggerString[dataset]=trigger
+    if (trigger in triggersToRemove) or (trigger[:-1] in triggersToRemove) or (trigger.split('_')[0]+'_*' in triggersToRemove):
+        print trigger
+        continue
     for group in triggersGroupMap[trigger]:
         if group in getTriggerString.keys(): getTriggerString[group]+='||'+trigger
         else: getTriggerString[group]=trigger
 
-## Fill twoGroupsList and getTriggerString
-#for group1 in groupList:
-#    for group2 in groupList:
-#        if (not group1.isdigit()) and (not group2.isdigit()): twoGroups = group1 + "-" + group2
-#        if not (twoGroups in twoGroupsList) and ("L1" not in twoGroups):
-#            twoGroupsList.append(twoGroups)
-#            twoGroupsTrigger="("+(getTriggerString[group1])+")&&("+(getTriggerString[group2])+")"
-#            getTriggerString[twoGroups]=twoGroupsTrigger
-
-### Fill twoHLTsList and getTriggerString
-#for trigger1 in HLTList:
-#    for trigger2 in HLTList:
-#        twoHLTs = trigger1 + "-" + trigger2
-#        if not (twoHLTs in twoHLTsList):
-#            twoHLTsList.append(twoHLTs)
-#            twoHLTsTrigger="("+(getTriggerString[trigger1])+")&&("+(getTriggerString[trigger2])+")"
-#            getTriggerString[twoHLTs]=twoHLTsTrigger
-
 ## Fill string for All group
-
-groupList.append('All_HLT_paths')
-groupList.append('All_HLT_aliases')
-
-i = 0
+groupList.append('All_HLT')
 for trigger in HLTList:
-    if (trigger in triggersToRemoveFromTotalRate) or (trigger in triggersToRemove): continue
-    if 'All_HLT_aliases' in getTriggerString.keys(): getTriggerString['All_HLT_aliases']+='||HLT_'+str(i)
-    else: getTriggerString['All_HLT_aliases']='HLT_0'
-    i += 1
+    if (trigger in triggersToRemove) or (trigger[:-1] in triggersToRemove) or (trigger.split('_')[0]+'_*' in triggersToRemove): continue
+    if 'All_HLT' in getTriggerString.keys(): getTriggerString['All_HLT']+='||'+trigger
+    else: getTriggerString['All_HLT']=trigger
 
+## Fill string for prescaled paths
+groupList.append('All_PSed')
 for trigger in HLTList:
-    if (trigger in triggersToRemoveFromTotalRate) or (trigger in triggersToRemove): continue
-    if 'All_HLT_paths' in getTriggerString.keys(): getTriggerString['All_HLT_paths']+='||'+trigger
-    else: getTriggerString['All_HLT_paths']=trigger
+    if (trigger in triggersToRemove) or (trigger[:-1] in triggersToRemove) or (trigger.split('_')[0]+'_*' in triggersToRemove): continue
+    if int(prescaleMap[trigger][0]) <=1 : continue
+    if 'All_PSed' in getTriggerString.keys(): getTriggerString['All_PSed']+='||'+trigger
+    else: getTriggerString['All_PSed']=trigger
+
+## Fill string for type
+groupList.append('type_signal')
+for trigger in triggersTypeMap:
+    if (trigger in triggersToRemove) or (trigger[:-1] in triggersToRemove) or (trigger.split('_')[0]+'_*' in triggersToRemove): continue
+    if (not ('signal' in triggersTypeMap[trigger])) and (not ('backup' in triggersTypeMap[trigger])):continue
+    if 'type_signal' in getTriggerString.keys(): getTriggerString['type_signal']+='||'+trigger
+    else: getTriggerString['type_signal']=trigger
+
+groupList.append('type_control')
+for trigger in triggersTypeMap:
+    if (trigger in triggersToRemove) or (trigger[:-1] in triggersToRemove) or (trigger.split('_')[0]+'_*' in triggersToRemove): continue
+    if not ('control' in triggersTypeMap[trigger]):continue
+    if 'type_control' in getTriggerString.keys(): getTriggerString['type_control']+='||'+trigger
+    else: getTriggerString['type_control']=trigger
+
+#groupList.append('type_backup')
+#for trigger in triggersTypeMap:
+#    if not ('backup' in triggersTypeMap[trigger]):continue
+#    if 'type_backup' in getTriggerString.keys(): getTriggerString['type_backup']+='||'+trigger
+#    else: getTriggerString['type_backup']=trigger
+
+                                           
