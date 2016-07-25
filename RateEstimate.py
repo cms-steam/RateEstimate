@@ -540,15 +540,15 @@ def getEvents(input_):
 #                    for event in tree:                        
 #                        #print '%s : %d , value : %d'%(triggerName,tree.Draw("",triggerName),getattr(event,triggerName))
 #                        break
-            global Uu
-#            print '%s : %d , total : %d'%("HLT_Mu20_v3",tree.Draw("","HLT_Mu20_v3"),Uu)
+            global Total_count
+#            print '%s : %d , total : %d'%("HLT_Mu20_v3",tree.Draw("","HLT_Mu20_v3"),Total_count)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             for event in tree:
                 if (int(runNo) != 0 and int(getattr(event,'Run')) != int(runNo)):continue
                 #if u==N: break
                 if u%(N/50)==0: print "\r{0:.1f} %".format(100*float(u)/float(N))
                 u += 1 
-                Uu += 1 
+                Total_count += 1 
                 if isData: PUevent = 0
                 else: PUevent = getattr(event,"NPUTrueBX0")
                 if (PUevent>pileupMAX or PUevent<pileupMIN): continue
@@ -568,7 +568,7 @@ def getEvents(input_):
                             if not (path in triggerAndGroupList):continue
                             if (path not in prescaleMap.keys()) or int(prescaleMap[path][0])==0 or prescaleMap[path][0]=='' or 'DST_' in path or 'AlCa_' in path: continue 
                             HLTCount = getattr(event,path) 
-                            if HLTCount and filterFloat and Uu%int(prescaleMap[path][0])==0: 
+                            if HLTCount and filterFloat and Total_count%int(prescaleMap[path][0])==0: 
                                 passedEventsMatrix_[trigger] += 1
                                 break
                     elif trigger in primaryDatasetList:
@@ -578,14 +578,14 @@ def getEvents(input_):
                             if not (path in triggerAndGroupList):continue
                             if (path not in prescaleMap.keys()) or int(prescaleMap[path][0])==0 or prescaleMap[path][0]=='': continue
                             HLTCount = getattr(event,path)
-                            if HLTCount and filterFloat and  Uu%int(prescaleMap[path][0])==0:
+                            if HLTCount and filterFloat and  Total_count%int(prescaleMap[path][0])==0:
                                 passedEventsMatrix_[trigger] += 1
                                 break
                     else:
                         if (trigger not in prescaleMap.keys()) or int(prescaleMap[trigger][0])==0 or prescaleMap[trigger][0]=='': continue 
                         else: 
                             HLTCount = getattr(event,trigger)
-                            if (HLTCount==1 and filterFloat==1 and Uu%int(prescaleMap[trigger][0])==0): passedEventsMatrix_[trigger] += 1
+                            if (HLTCount==1 and filterFloat==1 and Total_count%int(prescaleMap[trigger][0])==0): passedEventsMatrix_[trigger] += 1
                         #print "Event:",u,"passedEventsMatrix_=",passedEventsMatrix_[trigger]
 
         else:  #if chain is not undefined/empty set entries to zero
@@ -596,7 +596,7 @@ def getEvents(input_):
     return passedEventsMatrix_,totalEventsMatrix_
 
 ## fill the matrixes of the number of events and the rates for each dataset and trigger
-Uu = 0
+Total_count = 0
 def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerDataset,squaredErrorRateTriggerDataset):
     print "Entered fillMatrixAndRates()"
     start = time.time()
