@@ -54,6 +54,9 @@ for Line in open(file_menu,'r'):
         tmp_group = tmp_group.replace('(',',')
         tmp_group = tmp_group.replace(')',',')
         tmp_group = tmp_group.replace(' ','')
+        tmp_group = tmp_group.replace('SUSY','SUS')
+        tmp_group = tmp_group.replace('Muon','MUO')
+        tmp_group = tmp_group.replace('muon','MUO')
         tmp_group_list = tmp_group.split(',')
         if not (trigger in triggerGroup):
             triggerGroup[trigger] = tmp_group_list 
