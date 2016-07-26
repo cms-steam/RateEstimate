@@ -3,15 +3,17 @@
 
 ########## Configuration #####################################################################
 #from triggersGroupMap.triggersGroupMap__frozen_2015_25ns14e33_v4p4_HLT_V1 import *
-#from triggersGroupMap.triggersGroupMap_GRun_V58_modifiable import *
-from triggersGroupMap.triggersMap_GRun_V97 import *
-from STEAMprescale_5e33_Map import *
+#from triggersGroupMap.triggersMap_GRun_V72 import *
+from triggersGroupMap.Fill_5105_Menu import *
+#from triggersGroupMap.prescaleMap_GRun_V72 import *
+#from triggersGroupMap.triggersMap_L1HandMade import *
 #from datasetCrossSections.datasetCrossSectionsPhys14 import *
-#from datasetCrossSections.datasetCrossSectionsSpring15_updatedFilterEff import *
 from datasetCrossSections.datasetCrossSectionsHLTPhysics import *
 #from datasetCrossSections.datasetLumiSectionsData import *
 
 batchSplit = True
+batchSplit = False
+looping = True
 looping = False
 
 ##### Adding an option to the code #####
@@ -27,11 +29,8 @@ if batchSplit:
 
 ##### Other configurations #####
 
-#folder = '/afs/cern.ch/user/s/sdonato/AFSwork/public/STEAM/Phys14_50ns_mini/'       # folder containing ntuples
-#folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/HLTPhysics/HLTRates_2e33_25ns_V4p4_V1_georgia2' 
-#folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Spring15/Hui_HLTRates_2e33_25ns_V4p4_V1'
-#folder = '/afs/cern.ch/user/v/vannerom/eos/cms/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Spring15/Hui_HLTRates_2e33_25ns_V4p4_V1_last_round_perhaps'
-folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Run2016B/HLTPhysics_HLTRates_GRunV97_unprescaled_Run2016_run273725'
+folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Run2016D/STEAM_ND_HLTPhysics2016D_hlt3p0_1e34_V1/HLTPhysics'
+localdir = '/afs/cern.ch/user/x/xgao/eos/cms'
 lumi = 1              # luminosity [s-1cm-2]
 if (batchSplit): multiprocess = 1           # number of processes
 else: multiprocess = 1 # 8 multiprocessing disbaled for now because of incompatibilities with the way the files are accessed. Need some development.
@@ -42,22 +41,21 @@ pileupFilterGen = False    # use pile-up filter gen or L1?
 useEMEnriched = False       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = False       # use plain QCD EM-enriched samples (Pt30to170)?
 evalL1 = False              # evaluate L1 triggers rates?
-evalHLTpaths = False        # evaluate HLT triggers rates?
+evalHLTpaths = True        # evaluate HLT triggers rates?
 evalHLTgroups = True       # evaluate HLT triggers groups rates and global HLT and L1 rates
-evalHLTprimaryDatasets = False # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
+evalHLTprimaryDatasets = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
 #evalHLTtwopaths = True    # evaluate the correlation among the HLT trigger paths rates?
 evalHLTtwogroups = False   # evaluate the correlation among the HLT trigger groups rates?
-label = "rates_GRun_V97"         # name of the output files
-runNo = "273725"           #if runNo='0', means code will run for all Run.
-
+label = "test"         # name of the output files
+runNo = "0"           #if runNo='0', means code will run for all Run.
 
 isData = True
 ## L1Rate studies as a function of PU and number of bunches:
 evalL1scaling = False
 
-nLS = 521 ## number of Lumi Sections run over data
+nLS = 623 ## number of Lumi Sections run over data
 lenLS = 23.31 ## length of Lumi Section
-psNorm = 9000*(5./3.5) #232./4. # Prescale Normalization factor if running on HLTPhysics
+psNorm = 720. / 4. #*(5./4.64) #232./4. # Prescale Normalization factor if running on HLTPhysics
 ###############################################################################################
 
 ## log level
@@ -284,7 +282,7 @@ def writeMatrixEvents(fileName,datasetList,triggerList,totalEventsMatrix,passedE
                 if not group.isdigit(): text += group+','        
             text=text[:-1] ##remove the last comma
             text += '\t'
-        if writeDataset:
+        if writeDataset and trigger not in L1List:
             for dataset in triggersDatasetMap[trigger]: text += dataset+','
             text=text[:-1] ##remove the last comma
             text += '\t'       
@@ -308,9 +306,10 @@ def writeMatrixRates(fileName,prescaleList,datasetList,rateTriggerDataset,rateTr
     if writeDataset: text += 'Primary dataset\t'
     text += 'Total\t\t\t'
     for dataset in datasetList:
-        datasetName = dataset[:-21]
-        datasetName = datasetName.replace("-", "")
-        datasetName = datasetName.replace("_", "")
+        datasetName = dataset
+        #datasetName = dataset[:-21]
+        #datasetName = datasetName.replace("-", "")
+        #datasetName = datasetName.replace("_", "")
         text +=  datasetName + '\t\t\t'
 
     for trigger in triggerList:
@@ -324,7 +323,7 @@ def writeMatrixRates(fileName,prescaleList,datasetList,rateTriggerDataset,rateTr
                 if not group.isdigit(): text += group+','        
             text=text[:-1] ##remove the last comma
             text += '\t'
-        if writeDataset:
+        if writeDataset and trigger not in L1List:
             for dataset in triggersDatasetMap[trigger]: text += dataset+','
             text=text[:-1] ##remove the last comma
             text += '\t'
@@ -440,80 +439,64 @@ def getEvents(input_):
     tree = None
     _file0 = ROOT.TFile.Open(filepath)
     tree=ROOT.gDirectory.Get("HltTree")
-    if (tree!=None): 
-        # Creating aliases for HLT paths branches in the tree in order to reduce the length of the global OR string
-        i = 0
-        for leaf in tree.GetListOfLeaves():
-            triggerName = leaf.GetName()
-            if ("HLT" in triggerName) and not ("Prescl" in triggerName) and (triggerName in HLTList):
-                tree.SetAlias("HLT_"+str(i),triggerName)
-                i += 1
-        # Creating aliases for L1 paths branches in the tree in order to reduce the length of the global OR string
-        i = 0
-        for leaf in tree.GetListOfLeaves():
-            triggerName = leaf.GetName()
-            if ("L1_" in triggerName) and not ("Prescl" in triggerName) and not ("HLT_" in triggerName) and (triggerName in L1List):
-                tree.SetAlias("L1_"+str(i),triggerName)
-                i += 1
-        # Creating aliases for HLT paths branches in the tree in order to reduce the length of the group strings
-        groupAliasCounter = {}
-        for leaf in tree.GetListOfLeaves():
-            triggerName = leaf.GetName()
-            if ("HLT_" in triggerName) and not ("Prescl" in triggerName) and (triggerName in HLTList):
-                for group in triggersGroupMap[triggerName]:
-                    if not group in groupAliasCounter.keys(): groupAliasCounter[group] = 0
-                    else: groupAliasCounter[group] += 1
-                    tree.SetAlias(group+"_"+str(groupAliasCounter[group]),triggerName)
-        # Creating aliases for HLT paths branches in the tree in order to reduce the length of the primary dataset strings
-        datasetAliasCounter = {}
-        #for leaf in tree.GetListOfLeaves():
-        for triggerName in triggerList:
-            #triggerName = leaf.GetName()
-            #if ("HLT_" in triggerName) and not ("Prescl" in triggerName) and (triggerName in HLTList):
-            for dataset in triggersDatasetMap[triggerName]:
-                if not dataset in datasetAliasCounter.keys(): datasetAliasCounter[dataset] = 0
-                else: datasetAliasCounter[dataset] += 1
-                tree.SetAlias(dataset+"_"+str(datasetAliasCounter[dataset]),triggerName) 
-
-#    for group in groupList:
-#        groupAliasList = getTriggerString[group].split('||')
-#        getTriggerString[group] = '0'
-#        index = 0
-#        for triggerAlias in groupAliasList:
-#            triggerPath = tree.GetAlias(triggerAlias) 
-#            if triggerPath in triggerList:
-#                if getTriggerString[group]: getTriggerString[group] += '||'+group+'_'+str(index)
-#                else: getTriggerString[group] = group+'_0'
-#                index += 1
-#        if getTriggerString[group]=='0': getTriggerString[group] = '1'
-#    for dataset in primaryDatasetList:  
-#        datasetAliasList = getTriggerString[dataset].split('||')
-#        getTriggerString[dataset] = '0'
-#        index = 0
-#        for triggerAlias in datasetAliasList:
-#            triggerPath = tree.GetAlias(triggerAlias)
-#            if triggerPath in triggerList:
-#                if getTriggerString[dataset]: getTriggerString[dataset] += '||'+dataset+'_'+str(index)
-#                else: getTriggerString[dataset] = dataset+'_0'
-#                index += 1
-#        if getTriggerString[dataset]=='0': getTriggerString[dataset] = '1'
-
-    ##### "Draw" method
     if not looping:
+    ##### "Draw" method
+        if (tree!=None): 
+        # Creating aliases for HLT paths branches in the tree in order to reduce the length of the global OR string
+            i = 0
+            root_alias_dic = {}
+            for leaf in tree.GetListOfLeaves():
+                triggerName = leaf.GetName()
+                if (triggerName in triggerList):
+                    tree.SetAlias("T_"+str(i),triggerName)
+                    if not triggerName in root_alias_dic:
+                        root_alias_dic[triggerName] = "T_"+str(i)
+                    i += 1
+    
+            getTriggerString1={}
+            for t in getTriggerString:
+                getTriggerString1[t]=getTriggerString[t]
+            for group in groupList:
+                groupPathList = getTriggerString1[group].split('||')
+                print getTriggerString1[group]
+                print "*"*50
+                getTriggerString1[group] = '0'
+                for triggerPath in groupPathList:
+                    if triggerPath in triggerList:
+                        triggerAlias = root_alias_dic[triggerPath] 
+                        if getTriggerString1[group]!='0': getTriggerString1[group] += '||'+triggerAlias
+                        else: getTriggerString1[group] = triggerAlias
+                print getTriggerString1[group]
+                print "*"*50
+    
+    
+            for dataset in primaryDatasetList:
+                datasetPathList = getTriggerString1[dataset].split('||')
+                print getTriggerString1[dataset]
+                print "*"*50
+                getTriggerString1[dataset] = '0'
+                for triggerPath in datasetPathList:
+                    if triggerPath in triggerList:
+                        triggerAlias = root_alias_dic[triggerPath]
+                        if getTriggerString1[dataset]!='0': getTriggerString1[dataset] += '||'+triggerAlias
+                        else: getTriggerString1[dataset] = triggerAlias
+                print getTriggerString1[dataset]
+                print "*"*50
+
         #if tree is defined, get totalEvents and passedEvents
         if (tree!=None): 
             if isData:
-                totalEventsMatrix_ = tree.Draw("",denominatorString)
+                totalEventsMatrix_ = tree.Draw("",denominatorString) 
                 if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("",'(MCWeightSign<0)&&('+denominatorString+')')
-                for trigger in triggerAndGroupList:  
-                    passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString[trigger]+')&&('+filterString+')')
-                    if withNegativeWeights: passedEventsMatrix_[trigger] = passedEventsMatrix_[trigger] - 2*tree.Draw("",'(MCWeightSign<0)&&('+getTriggerString[trigger]+')&&('+filterString+')')
+                for trigger in triggerAndGroupList:
+                    passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString1[trigger]+')&&('+filterString+')')
+                    if withNegativeWeights: passedEventsMatrix_[trigger] = passedEventsMatrix_[trigger] - 2*tree.Draw("",'(MCWeightSign<0)&&('+getTriggerString1[trigger]+')&&('+filterString+')')
             else:
                 totalEventsMatrix_ = tree.Draw("",'('+denominatorString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
                 if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("",'(MCWeightSign<0)&&('+denominatorString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
                 for trigger in triggerAndGroupList:
-                    passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString[trigger]+')&&('+filterString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
-                    if withNegativeWeights: passedEventsMatrix_[trigger] = passedEventsMatrix_[trigger] - 2*tree.Draw("",'(MCWeightSign<0)&&('+getTriggerString[trigger]+')&&('+filterString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
+                    passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString1[trigger]+')&&('+filterString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
+                    if withNegativeWeights: passedEventsMatrix_[trigger] = passedEventsMatrix_[trigger] - 2*tree.Draw("",'(MCWeightSign<0)&&('+getTriggerString1[trigger]+')&&('+filterString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
             _file0.Close()
         else:  #if tree is not undefined/empty set enties to zero
             totalEventsMatrix_ = 0
@@ -525,63 +508,47 @@ def getEvents(input_):
         #if tree is defined, get totalEvents and passedEvents
         if (tree!=None):
             if isData:
+#                print denominatorString
                 totalEventsMatrix_ = tree.Draw("",denominatorString)
                 if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSign<0)&&("+denominatorString+")")
             else:
                 totalEventsMatrix_ = tree.Draw("",'('+denominatorString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
-                if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSign<0)&&("+denominatorString+")&&(NPUTrueBX0<="+str(pileupMAX)+")&&(NPUTrueBX0>="+str(pileupMIN)+")")
+                if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSign<0)&&("+denominatorString+")&&(NPUTrueBX0<="+str(pileupMAX)+")&&(NPUTrueBX0>="+str(pileupMIN)+")") 
             N = tree.GetEntries()
-            passedEventsMatrix_['All_HLT'] = 0
-            passedEventsMatrix_['L1'] = 0
+            if evalHLTpaths: passedEventsMatrix_['All_HLT'] = 0
+            if evalL1: passedEventsMatrix_['L1'] = 0
 
-            HLTNames = []
-            L1Names = []
-            L1PrescDict = {}
             i = 0
-            for leaf in tree.GetListOfLeaves():
-                triggerName = leaf.GetName()
-                if (evalHLTpaths) and ("HLT_" in triggerName) and not ("Prescl" in triggerName):
-                    HLTNames.append(triggerName)
-                elif (evalL1) and ("L1_" in triggerName) and not ("HLT_" in triggerName) and not ("Prescl" in triggerName):
-                    L1Names.append(triggerName)
 
-#            presclFromMap = False
-#            lumiColumn = 1
-#            # Filling the prescale dictionary using the map
-#            if (presclFromMap):
-#                for trigger in triggersL1GroupMap.keys():
-#                    L1PrescDict[trigger] = triggersL1GroupMap[trigger][lumiColumn]
-#            # Filling the prescale dictionary using the tree
-#            else:
-#                for event in tree:
-#                    for trigger in L1Names: L1PrescDict[trigger] = getattr(event,trigger+'_Prescl')
-#                    break
+            presclFromMap = False
+            lumiColumn = 1
+            # Filling the prescale dictionary using the map
+            if (presclFromMap):
+                for trigger in triggersL1GroupMap.keys():
+                    L1PrescDict[trigger] = triggersL1GroupMap[trigger][lumiColumn]
         
             for trigger in triggerAndGroupList:
                 passedEventsMatrix_[trigger] = 0
-
-            filterList = filterString.split("&&")
-            i = 0
-            runSelection = 0
-            for filterSplit in filterList:
-                if "Run" in filterSplit:
-                    runSelection = filterSplit[-6:]
-                    print runSelection
-                    filterList.remove(filterSplit)
-                    continue
-                filterList[i] = filterSplit.replace(" ","")
-                filterList[i] = filterList[i].replace("(","")
-                filterList[i] = filterList[i].replace(")","")
-                i += 1
- 
             # Looping over the events to compute the rates
             u = 0
             #N = 100.
             print "Nevents =",N
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#            for leaf in tree.GetListOfLeaves():
+#                triggerName = leaf.GetName()
+#                if (tree.Draw("",triggerName)) != 0:
+#                    for event in tree:                        
+#                        #print '%s : %d , value : %d'%(triggerName,tree.Draw("",triggerName),getattr(event,triggerName))
+#                        break
+            global Total_count
+#            print '%s : %d , total : %d'%("HLT_Mu20_v3",tree.Draw("","HLT_Mu20_v3"),Total_count)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             for event in tree:
+                if (int(runNo) != 0 and int(getattr(event,'Run')) != int(runNo)):continue
                 #if u==N: break
-                if u%(N/100)==0: print "\r{0:.1f} %".format(100*float(u)/float(N))
-                u += 1
+                if u%(N/50)==0: print "\r{0:.1f} %".format(100*float(u)/float(N))
+                u += 1 
+                Total_count += 1 
                 if isData: PUevent = 0
                 else: PUevent = getattr(event,"NPUTrueBX0")
                 if (PUevent>pileupMAX or PUevent<pileupMIN): continue
@@ -591,51 +558,45 @@ def getEvents(input_):
                 filterFloat = 1
                 stringMemory = ""
                 psMultiple = False
-                for i in xrange(0,len(filterList)):
-                    if filterList[i]!="1":
-                        if ("!" in filterList[i]) and ("!!" not in filterList[i]):
-                            stringMemory = filterList[i].replace("!","")
-                            filterFloat = filterFloat*(1-getattr(event,stringMemory))
-                        elif ("!!" in filterList[i]):
-                            stringMemory = filterList[i].replace("!!","")
-                            filterFloat = filterFloat*(1-((1-getattr(event,stringMemory))*getattr(event,filterList[i+1])))
-                        else:
-                            if ("!!" in filterList[i-1]): continue
-                            else: filterFloat = filterFloat*getattr(event,filterList[i])
                 for trigger in triggerAndGroupList:
-                    if trigger in groupList:
+                    if getTriggerString[trigger] == '0':continue
+                    if trigger in groupList: 
                         triggerInGroupList = getTriggerString[trigger].split('||')
                         psMultiple = False
-                        for path in triggerInGroupList:
-                            if (path not in prescaleMap.keys()) or int(prescaleMap[path][0])==0 or prescaleMap[path][0]=='' or 'DST_' in path or 'AlCa_' in path: continue
-                            HLTCount = getattr(event,path)
-                            if HLTCount and filterFloat and u%int(prescaleMap[path][0])==0:
+                            
+                        for path in triggerInGroupList:     
+                            if not (path in triggerAndGroupList):continue
+                            if (path not in prescaleMap.keys()) or int(prescaleMap[path][0])==0 or prescaleMap[path][0]=='' or 'DST_' in path or 'AlCa_' in path: continue 
+                            HLTCount = getattr(event,path) 
+                            if HLTCount and filterFloat and Total_count%int(prescaleMap[path][0])==0: 
                                 passedEventsMatrix_[trigger] += 1
                                 break
                     elif trigger in primaryDatasetList:
                         triggerInDatasetList = getTriggerString[trigger].split('||')
                         psMultiple = False
                         for path in triggerInDatasetList:
+                            if not (path in triggerAndGroupList):continue
                             if (path not in prescaleMap.keys()) or int(prescaleMap[path][0])==0 or prescaleMap[path][0]=='': continue
                             HLTCount = getattr(event,path)
-                            if HLTCount and filterFloat and  u%int(prescaleMap[path][0])==0:
+                            if HLTCount and filterFloat and  Total_count%int(prescaleMap[path][0])==0:
                                 passedEventsMatrix_[trigger] += 1
                                 break
                     else:
-                        if (trigger not in prescaleMap.keys()) or int(prescaleMap[trigger][0])==0 or prescaleMap[trigger][0]=='': continue
-                        else:
+                        if (trigger not in prescaleMap.keys()) or int(prescaleMap[trigger][0])==0 or prescaleMap[trigger][0]=='': continue 
+                        else: 
                             HLTCount = getattr(event,trigger)
-                            if (HLTCount==1 and filterFloat==1 and u%int(prescaleMap[trigger][0])==0): passedEventsMatrix_[trigger] += 1
+                            if (HLTCount==1 and filterFloat==1 and Total_count%int(prescaleMap[trigger][0])==0): passedEventsMatrix_[trigger] += 1
+                        #print "Event:",u,"passedEventsMatrix_=",passedEventsMatrix_[trigger]
 
         else:  #if chain is not undefined/empty set entries to zero
             totalEventsMatrix_ = 0
             for trigger in triggerAndGroupList:
                 passedEventsMatrix_[trigger] = 0
 
-
     return passedEventsMatrix_,totalEventsMatrix_
 
 ## fill the matrixes of the number of events and the rates for each dataset and trigger
+Total_count = 0
 def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerDataset,squaredErrorRateTriggerDataset):
     print "Entered fillMatrixAndRates()"
     start = time.time()
@@ -649,12 +610,16 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
     eosDirContent=[]
     lsl(walking_folder,eosDirContent)
     for key in eosDirContent:
-        if (("failed" in str(key['path'])) or ("log" in str(key['file']))): continue
+        if (("failed" in str(key['path'])) or ("log" in str(key['file'])) or ("160508_132840" in str(key['path']))): continue
         if (".root" in str(key['file'])):
-            filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
-            dirpath = "root://eoscms//eos/cms"+walking_folder
+            if batchSplit:
+                filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
+                dirpath = "root://eoscms//eos/cms"+walking_folder
+            else:
+                filenames.append(localdir+str(key['path'])+'/'+str(key['file']))
+                dirpath = localdir+walking_folder
             noRootFile = False
- 
+
     ## print an error if a dataset is missing
     if batchSplit:
         if (dirpath=='' or (len(filenames)<options.fileNumber)):
@@ -757,6 +722,7 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
                         inputs.append((filename,filterString,denominatorString,withNegativeWeights))
                 else: inputs.append((filename,filterString,denominatorString,withNegativeWeights))
             i += 1
+            #if i==16:break
  
         ## evaluate the number of events that pass the trigger with getEvents()
         if multiprocess>1:
@@ -784,6 +750,7 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerD
             N2g = (-1+math.pow(1+(8*L2g),0.5))/2
         for trigger in triggerAndGroupList:
             if isData:
+                #print passedEventsMatrix[(dataset,trigger)], rateDataset[dataset]
                 rateTriggerDataset[(dataset,trigger)] = passedEventsMatrix[(dataset,trigger)]/rateDataset[dataset]
                 squaredErrorRateTriggerDataset[(dataset,trigger)] = passedEventsMatrix[(dataset,trigger)]/(rateDataset[dataset]*rateDataset[dataset])
                 if evalHLTtwogroups:
@@ -862,8 +829,6 @@ if multiprocess>1:
 triggerAndGroupList=[]
 #if not evalL1: groupList.remove('L1')
 #if not evalHLTpaths : groupList.remove('All_HLT')
-if looping: groupList.remove('All_HLT_aliases')
-else: groupList.remove('All_HLT_paths')
 if evalHLTpaths:
     HLTList = CompareGRunVsGoogleDoc(datasetList,HLTList,folder)
     triggerAndGroupList=triggerAndGroupList+HLTList
@@ -875,7 +840,8 @@ if evalHLTprimaryDatasets: triggerAndGroupList=triggerAndGroupList+primaryDatase
 if evalHLTgroups:       triggerAndGroupList=triggerAndGroupList+groupList
 #if evalHLTtwopaths:     triggerAndGroupList=triggerAndGroupList+twoHLTsList
 if evalHLTtwogroups:    triggerAndGroupList=triggerAndGroupList+twoGroupsList
-if evalL1:              triggerAndGroupList=triggerAndGroupList+L1List
+#if evalL1:              triggerAndGroupList=triggerAndGroupList+L1List
+
 
 # fill triggerList with the trigger HLT+L1
 #triggerList=[]
@@ -973,9 +939,9 @@ else:
     if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups.tsv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
 
     ## write files with  trigger rates
-    if evalL1: writeMatrixRates(filename+'_L1_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
+    if evalL1: writeMatrixRates(filename+'_L1_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True,False)
     ##if evalL1scaling: writeL1RateStudies(filename+'_L1RateStudies_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True)
-    if evalHLTpaths: writeMatrixRates(filename+'_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,HLTList,True)
+    if evalHLTpaths: writeMatrixRates(filename+'_matrixRates.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,HLTList,True,True)
     if evalHLTprimaryDatasets: writeMatrixRates(filename+'_matrixRates.primaryDataset.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,primaryDatasetList)
     if evalHLTgroups: writeMatrixRates(filename+'_matrixRates.groups.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,groupList)
     if evalHLTtwogroups: writeMatrixRates(filename+'_matrixRates.twogroups.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,twoGroupsList)
