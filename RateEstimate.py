@@ -869,7 +869,7 @@ rateTriggerDataset = {}                 #rateTriggerDataset[(dataset,trigger)] =
 squaredErrorRateTriggerDataset = {}     #squaredErrorRateTriggerDataset[(dataset,trigger)] = squared error on the rate
 rateTriggerTotal = {}                   #rateTriggerTotal[(dataset,trigger)] = total rate of a trigger
 squaredErrorRateTriggerTotal = {}       #squaredErrorRateTriggerTotal[trigger] = squared error on the rate
-setToZero(totalEventsMatrix,passedEventsMatrix,triggerAndGroupList,rateTriggerTotal,squaredErrorRateTriggerTotal)  #fill all dictionaries with zero
+setToZero(totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,triggerAndGroupList,rateTriggerTotal,squaredErrorRateTriggerTotal)  #fill all dictionaries with zero
 
 ## create a list with prescales associated to each HLT/L1 trigger path
 prescaleList = {}               # prescaleTriggerTotal[trigger] = prescale from Ntuple                                             
@@ -881,7 +881,7 @@ for dataset in datasetList:
     if batchSplit:
         if options.datasetName=="all": fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerDataset,squaredErrorRateTriggerDataset)
         elif dataset==options.datasetName:
-            fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerDataset,squaredErrorRateTriggerDataset)
+            fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,rateTriggerDataset,squaredErrorRateTriggerDataset)
             break
     else: fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,rateTriggerDataset,squaredErrorRateTriggerDataset)
 
@@ -902,8 +902,9 @@ for dataset in datasetList:
                     rateTriggerTotal[trigger] += rateTriggerDataset[(dataset,trigger)]
                     squaredErrorRateTriggerTotal[trigger] += squaredErrorRateTriggerDataset[(dataset,trigger)]
 
-if batchSplit: filename = 'ResultsBatch/'
-else: filename = 'Results/'
+if batchSplit: directoryname = 'ResultsBatch/'
+else: directoryname = 'Results/'
+filename = ''
 filename += label
 filename += "_"+triggerName
 filename += "_"+str(lumi).replace("+","")
@@ -916,17 +917,22 @@ if useMuEnriched: filename += '_MuEn'
 
 
 if batchSplit:
+
     try:
-        mkdir("ResultsBatch")
+        #mkdir("ResultsBatch_Parking2_Parking3")
+        if not os.path.exists(directoryname+"ResultsBatch_Events"): os.makedirs(directoryname+"ResultsBatch_Events")
+        if not os.path.exists(directoryname+"ResultsBatch_groupEvents"): os.makedirs(directoryname+"ResultsBatch_groupEvents")
+        if not os.path.exists(directoryname+"ResultsBatch_primaryDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_primaryDatasetEvents")
     except:
         pass
 
     ### write files with events count
     if evalL1: writeMatrixEvents(filename+'_L1_matrixEvents_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,L1List,totalEventsMatrix,passedEventsMatrix,True,False)
-    if evalHLTpaths: writeMatrixEvents(filename+'_matrixEvents_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,HLTList,totalEventsMatrix,passedEventsMatrix,True,True)
-    if evalHLTprimaryDatasets: writeMatrixEvents(filename+'_matrixEvents.primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,primaryDatasetList,totalEventsMatrix,passedEventsMatrix)
-    if evalHLTgroups: writeMatrixEvents(filename+'_matrixEvents.groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix)
+    if evalHLTpaths: writeMatrixEvents(directoryname+'ResultsBatch_Events/'+filename+'_matrixEvents_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,HLTList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,True,True)
+    if evalHLTprimaryDatasets: writeMatrixEvents(directoryname+'ResultsBatch_primaryDatasetEvents/'+filename+'_matrixEvents_primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,primaryDatasetList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
+    if evalHLTgroups: writeMatrixEvents(directoryname+'ResultsBatch_groupEvents/'+filename+'_matrixEvents_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
     if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
+
 
     ### write files with  trigger rates
     if evalL1:writeMatrixRates(filename+'_L1_matrixRates_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True,False)
