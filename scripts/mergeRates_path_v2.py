@@ -154,7 +154,6 @@ def mergeRates(input_dir,output_name,keyWord,L1write):
     
     ### Filling up the new .tsv file with the content of the python list
 
-    text_rate = ""
     text_rate += "\tTotalEvents\t\t\t"
     for dataset in datasetList:
         text_rate += str(TotalEventsPerDataset[dataset])

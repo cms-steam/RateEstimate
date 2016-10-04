@@ -36,7 +36,7 @@ def mergeRates(input_dir,output_name,keyWord,L1write):
     for i in range(2*len(datasetList)+5):
         rateList.append([]) #0 Prescale
     
-    text_rate = 'Prescale\tPath\tDataset\tGroup\t\tTotal\t\t\t'
+    text_rate = 'Path\t\tTotal\t\t\t'
     for i in range(len(datasetList)):
         text_rate+=datasetList[i].split('_TuneCUETP8M1_13TeV_pythia8')[0]+'\t\t\t'
     text_rate += '\n'
@@ -151,8 +151,7 @@ def mergeRates(input_dir,output_name,keyWord,L1write):
     
     ### Filling up the new .tsv file with the content of the python list
 
-    text_rate = ""
-    text_rate += "TotalEvents\t\t\t"
+    text_rate += "TotalEvents\t\t\t\t"
     for dataset in datasetList:
         text_rate += str(TotalEventsPerDataset[dataset])
         text_rate += "\t\t\t"
@@ -190,6 +189,7 @@ UnprescaledCount = True
 #start~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 mergeRates("ResultsBatch/ResultsBatch_groupEvents/","Results/output.group.tsv",'matrixEvents_groups_HLTPhysic',False)
+mergeRates("ResultsBatch/ResultsBatch_Pure_groupEvents/","Results/output.puregroup.tsv",'matrixEvents_Pure_groups_',False)
 
 
 my_print(datasetList)
