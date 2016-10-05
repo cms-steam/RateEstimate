@@ -1,4 +1,4 @@
-cd /afs/cern.ch/user/v/vannerom/work/CMSSW_7_6_3/src/
+cd /afs/cern.ch/user/x/xgao/CMSSW_7_6_3/src
 #cmsenv
 eval `scramv1 runtime -sh`
 cd -
