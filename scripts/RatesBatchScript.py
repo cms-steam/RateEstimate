@@ -8,7 +8,9 @@ sys.path.append("../")
 from datasetCrossSections.datasetCrossSectionsHLTPhysics import *
 
 MYDIR=os.getcwd()
-folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Run2016E/L1emu_V3p1_ParkingZeroBias_2016E_1p15e34'
+#MYDIR1=os.getcwd().split("scripts")[0]
+print MYDIR
+folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Run2016G/HLTPhysics_2016G_menu3p1p6_279694/HLTPhysics_ntuples'
 
 
 def runCommand(commandLine):
@@ -118,8 +120,8 @@ def subpu(datasetList,numdic,my_sum,minPU=0,maxPU=100):
                 tmp_jobname="submit_%s_%s.jobb"%(dataset,str(i))
                 tmp_job=open(MYDIR+'/'+tmp_dir+'/'+tmp_jobname,'w')
                 tmp_job.write("cd %s\n"%(MYDIR))
-                tmp_job.write("cd ../\n")
                 tmp_job.write("source env.sh\n")
+                tmp_job.write("cd ../\n")
                 tmp_job.write("python RateEstimate.py -n %s -d %s\n"%(str(i),dataset))
                 tmp_job.write("\n")
                 tmp_job.close()
