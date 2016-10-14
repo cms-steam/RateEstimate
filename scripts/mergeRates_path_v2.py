@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
-from datasetCrossSections.datasetCrossSectionsHLTPhysics import *
-from triggersGroupMap.Menu_online_v3p1_V2 import *
-from myref1 import *
-#import ROOT
 import time
 import sys
-#from math import *
-#from scipy.stats import binom
+sys.path.append("../")
 import os  
 import csv
 import math
+from datasetCrossSections.datasetCrossSectionsHLTPhysics import *
+from triggersGroupMap.Menu_online_v3p1_V4 import *
 
 Method = 1 #0: rate = count ; 1:HLT, rate = psNorm*count / LS*nLS ; 2:Zerobias, rate = 11245Hz * target nBunchs * nCount/total Event
 LS = 23.31
@@ -200,7 +197,7 @@ UnprescaledCount = True
 
 #start~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-mergeRates("ResultsBatch/ResultsBatch_Events/","Results/output.tsv",'matrixEvents_HLTPhysics',False)
+mergeRates("../ResultsBatch/ResultsBatch_Events/","../Results/output.tsv",'matrixEvents_HLTPhysics',False)
 
 
 my_print(datasetList)
