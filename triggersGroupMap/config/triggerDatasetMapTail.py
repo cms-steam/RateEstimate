@@ -1,3 +1,4 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 triggersToRemove = [
     'DST_*',
@@ -40,7 +41,11 @@ triggersToRemove = [
     
 ]
 
-def check_trigger(trigger_in):
+pureDatasetToRemove = [
+    'HLTPhysics*',
+    'Parking*',
+]
+def remove_trigger(trigger_in):
     if trigger_in in triggersToRemove:
         return True
 
@@ -58,6 +63,21 @@ def check_trigger(trigger_in):
                 return True
     return False
 
+def remove_pure_dataset(dataset_in):
+    if dataset_in in pureDatasetToRemove:
+        return True
+    for dataset in pureDatasetToRemove:
+        if '*' in dataset:
+            if dataset[:-1] in dataset_in:
+                return True
+    if (not "Physics" in datasetStream[dataset_in]) or "Parking" in datasetStream[dataset_in]:
+        return True
+    return False
+
+def remove_pure_stream(stream_in):
+    if (not "Physics" in stream_in[:7]):
+        return True
+    return False
 
 #triggersGroupMap = dict(triggersGroupMap.items())
 
@@ -66,7 +86,11 @@ L1List = []
 HLTList = []
 #twoHLTsList = []
 primaryDatasetList = []
+pure_primaryDatasetList = []
+streamList = []
+pure_streamList = []
 groupList = []
+corelation_datasetList = []
 twoDatasetsList = []
 getTriggerString = {}
 
@@ -76,7 +100,13 @@ for trigger in triggersDatasetMap.keys():
     if not (trigger in triggerList) : triggerList.append(trigger)
     for dataset in triggersDatasetMap[trigger]:
         if not dataset in primaryDatasetList: primaryDatasetList.append(dataset)
-    if check_trigger(trigger):continue
+        if (not dataset in pure_primaryDatasetList) and (not remove_pure_dataset(dataset)): 
+            pure_primaryDatasetList.append(dataset)
+    for stream in DatasetStreamMap[trigger]:
+        if not stream in streamList: streamList.append(stream)
+        if (not stream in pure_streamList) and (not remove_pure_stream(stream)):
+            pure_streamList.append(stream)
+    if remove_trigger(trigger):continue
     for group in triggersGroupMap[trigger]:
         if not group in groupList: groupList.append(group)
 
@@ -91,7 +121,10 @@ for trigger in triggerList:
     for dataset in triggersDatasetMap[trigger]:
         if dataset in getTriggerString.keys(): getTriggerString[dataset]+='||'+trigger
         else: getTriggerString[dataset]=trigger
-    if check_trigger(trigger):
+    for stream in DatasetStreamMap[trigger]:
+        if stream in getTriggerString.keys(): getTriggerString[stream]+='||'+trigger
+        else: getTriggerString[stream]=trigger
+    if remove_trigger(trigger):
         print trigger
         continue
     for group in triggersGroupMap[trigger]:
@@ -101,14 +134,14 @@ for trigger in triggerList:
 ## Fill string for All group
 groupList.append('All_HLT')
 for trigger in HLTList:
-    if check_trigger(trigger):continue
+    if remove_trigger(trigger):continue
     if 'All_HLT' in getTriggerString.keys(): getTriggerString['All_HLT']+='||'+trigger
     else: getTriggerString['All_HLT']=trigger
 
 ## Fill string for prescaled paths
 groupList.append('All_PSed')
 for trigger in HLTList:
-    if check_trigger(trigger):continue
+    if remove_trigger(trigger):continue
     if int(prescaleMap[trigger][0]) <=1 : continue
     if 'All_PSed' in getTriggerString.keys(): getTriggerString['All_PSed']+='||'+trigger
     else: getTriggerString['All_PSed']=trigger
@@ -117,14 +150,14 @@ for trigger in HLTList:
 if triggersTypeMap:
     groupList.append('type_signal')
     for trigger in triggersTypeMap:
-        if check_trigger(trigger):continue
+        if remove_trigger(trigger):continue
         if (not ('signal' in triggersTypeMap[trigger])) and (not ('backup' in triggersTypeMap[trigger])):continue
         if 'type_signal' in getTriggerString.keys(): getTriggerString['type_signal']+='||'+trigger
         else: getTriggerString['type_signal']=trigger
     
     groupList.append('type_control')
     for trigger in triggersTypeMap:
-        if check_trigger(trigger):continue
+        if remove_trigger(trigger):continue
         if not ('control' in triggersTypeMap[trigger]):continue
         if 'type_control' in getTriggerString.keys(): getTriggerString['type_control']+='||'+trigger
         else: getTriggerString['type_control']=trigger
@@ -135,5 +168,14 @@ if triggersTypeMap:
 #    if 'type_backup' in getTriggerString.keys(): getTriggerString['type_backup']+='||'+trigger
 #    else: getTriggerString['type_backup']=trigger
 
-                                           
+for dataset1 in primaryDatasetList:
+    for dataset2 in primaryDatasetList:
+        #print str((dataset1,dataset2))
+        corelation_datasetList.append((dataset1,dataset2))
+        getTriggerString[(dataset1,dataset2)]='0'
+
 print groupList
+#print primaryDatasetList
+#print pure_primaryDatasetList
+print streamList
+print pure_streamList

@@ -7,11 +7,9 @@ import sys
 sys.path.append("../")
 from datasetCrossSections.datasetCrossSectionsHLTPhysics import *
 
-MYDIR=os.getcwd()
-#MYDIR1=os.getcwd().split("scripts")[0]
-print MYDIR
-folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Run2016G/HLTPhysics_2016G_menu3p1p6_279694/HLTPhysics_ntuples'
 
+MYDIR=os.getcwd()
+folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Run2016G/HLTPhysics_2016G_menu3p1p6_279694/HLTPhysics_ntuples'
 
 def runCommand(commandLine):
     #sys.stdout.write("%s\n" % commandLine)
@@ -105,20 +103,29 @@ def getsubdic(datasetList):
         print dataset+'  ,  ',getdatasetfilenum(dataset)
     return dic,sum1
 
-def subpu(datasetList,numdic,my_sum,minPU=0,maxPU=100):
+def subpu(minPU,maxPU,datasetList,numdic,my_sum):
     try:
         tmp_dir='sub_%sto%s'%(str(minPU),str(maxPU))
         os.mkdir(tmp_dir)
     except:
         pass
+    try:
+        os.system('mkdir %s/sub_err'%tmp_dir)
+        os.system('mkdir %s/sub_out'%tmp_dir)
+    except:
+        print "err!"
+        pass
     j=1
     for dataset in datasetList:
         for i in range(1,numdic[dataset]+1):
-#            print 'PU~[%s,%s]: %s : %d/%d '%(str(minPU),str(maxPU),dataset,i,numdic[dataset])
+            if os.path.isfile('ResultsBatch/rates_GRun_V72_GRun_V113_7e33_1_matrixRates.groups_'+dataset+'_'+str(i)+'.tsv'): continue 
+            print 'PU~[%s,%s]: %s : %d/%d '%(str(minPU),str(maxPU),dataset,i,numdic[dataset])
             print 'total: %d/%d  ;  %.1f %% processed '%(j,my_sum,(100*float(j)/float(my_sum)))
+        
             try:
                 tmp_jobname="submit_%s_%s.jobb"%(dataset,str(i))
                 tmp_job=open(MYDIR+'/'+tmp_dir+'/'+tmp_jobname,'w')
+                tmp_job.write("curr_dir=%s\n"%(MYDIR))
                 tmp_job.write("cd %s\n"%(MYDIR))
                 tmp_job.write("source env.sh\n")
                 tmp_job.write("cd ../\n")
@@ -126,17 +133,11 @@ def subpu(datasetList,numdic,my_sum,minPU=0,maxPU=100):
                 tmp_job.write("\n")
                 tmp_job.close()
                 os.system("chmod +x %s"%(MYDIR+'/'+tmp_dir+'/'+tmp_jobname))
-                os.system("bsub -q 8nh -eo err.dat -oo out.dat %s"%(MYDIR+'/'+tmp_dir+'/'+tmp_jobname))
+                os.system("bsub -q 8nh -eo %s/sub_err/err_%s.dat -oo %s/sub_out/out_%s.dat %s"%(tmp_dir,str(i),tmp_dir,str(i),MYDIR+'/'+tmp_dir+'/'+tmp_jobname))
             except:
-                print "error in submitting jobs"
+                pass
             j+=1
 
 
-#datasetList+=datasetEMEnrichedList
-#datasetList+=datasetMuEnrichedList
-
-
-
 numdic,my_sum=getsubdic(datasetList)
-#submit jobs to bqueues
-subpu(datasetList,numdic,my_sum)
+subpu(0,100,datasetList,numdic,my_sum)
