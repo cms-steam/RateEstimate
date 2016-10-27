@@ -1,19 +1,21 @@
-file_menu = 'outputTSV.tsv'
+file_menu = 'Menu_online_v3.1_V4.tsv'
 file_sample = 'config/triggerDatasetMapTail.py'
-file_output = 'Menu_online_v3p1_V2.py'
+file_output = 'Menu_online_v3p1_V4.py'
 triggerName = 'tttt'
 column_stream = 0
 column_dataset = 1
 column_trigger = 2
-column_type = -1
-column_group = 3
-column_ps = 5
+column_type = 3
+column_group = 4
+column_ps = 52
 
 triggerDataset = {}
 triggerStream = {}
 triggerGroup = {}
 triggerType = {}
 prescaleMap = {}
+streamDataset = {}
+datasetStream = {}
 
 current_stream = ''
 current_dataset = ''
@@ -41,12 +43,18 @@ for Line in open(file_menu,'r'):
             current_stream = line[column_stream].replace('stream','')
             current_stream = current_stream.replace('\n','')
             current_stream = current_stream.replace(' ','')
+            if not current_stream in streamDataset:
+                streamDataset[current_stream]=[]
             continue
     if column_dataset >=0:
         if 'dataset' in line[column_dataset]:
             current_dataset = line[column_dataset].replace('dataset','')
             current_dataset = current_dataset.replace('\n','')
             current_dataset = current_dataset.replace(' ','')
+            if not current_dataset in streamDataset[current_stream]:
+                streamDataset[current_stream].append(current_dataset)
+            if column_stream >=0:
+                datasetStream[current_dataset]=current_stream
             continue
     if column_trigger >=0:
         if '_v' in line[column_trigger]:
@@ -157,6 +165,17 @@ file_out.write('triggersTypeMap = {\n')
 for trigger in triggerType:
     file_out.write('    \'%s\' : %s,\n'%(trigger,triggerType[trigger]))
 file_out.write('}\n\n')
+# write stream: dataset
+file_out.write('streamDataset = {\n')
+for stream in streamDataset:
+    file_out.write('    \'%s\' : %s,\n'%(stream,streamDataset[stream]))
+file_out.write('}\n\n')
+# write dataset: stream
+file_out.write('datasetStream = {\n')
+for dataset in datasetStream:
+    file_out.write('    \'%s\' : "%s",\n'%(dataset,str(datasetStream[dataset])))
+file_out.write('}\n\n')
+
 
 # write the rest part (from sample)
 for line in open(file_sample,'r'):
