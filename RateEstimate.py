@@ -45,12 +45,16 @@ evalHLTpaths = True        # evaluate HLT triggers rates?
 evalHLTgroups = True       # evaluate HLT triggers groups rates and global HLT and L1 rates
 evalHLTprimaryDatasets = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
 evalHLTprimaryDatasets_core = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
+evalHLTTrigger_primaryDatasets_core = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
 evalHLTstream = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
 #evalHLTtwopaths = True    # evaluate the coreelation among the HLT trigger paths rates?
 evalHLTtwogroups = False   # evaluate the coreelation among the HLT trigger groups rates?
 evalPureRate_Group = True
 evalPureRate_Dataset = True
 evalPureRate_Stream = True
+evalExclusive_group = True
+evalExclusive_dataset = False
+evalExclusive_dataset = False
 use_json = False
 json_file_name = 'json.txt'
 label = "test"         # name of the output files
@@ -132,10 +136,10 @@ def my_least_multiple(a_in,b_in):
         n+=1
     return lm
 
-def my_coreelation(list_in, dic_out, dic_out_err, weight_dic_in, typ_in):
-    for l1 in list_in:
-        for l2 in list_in:
-            weight = float(my_least_multiple(weight_dic_in[typ_in,l1],weight_dic_in[typ_in,l2]))
+def my_coreelation(list_in_1, list_in_2, dic_out, dic_out_err, weight_dic_in, typ_in_1, typ_in_2):
+    for l1 in list_in_1:
+        for l2 in list_in_2:
+            weight = float(my_least_multiple(weight_dic_in[typ_in_1,l1],weight_dic_in[typ_in_2,l2]))
             dic_out[(l1,l2)] += 1/weight
             dic_out_err[(l1,l2)] += 1/(weight*weight)
          
@@ -289,7 +293,7 @@ def getPrescaleListInNtuples():
     return prescales       
 
 ## set and fill totalEventsMatrix, passedEventsMatrix, rateTriggerTotal, squaredErrorRateTriggerTotal with zero
-def setToZero(totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,passedEventsMatrix_Core,WeightedErrorMatrix_Core,triggerAndGroupList,triggerAndGroupList_core,rateTriggerTotal,squaredErrorRateTriggerTotal) :
+def setToZero(totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,passedEventsMatrix_Core,WeightedErrorMatrix_Core,triggerAndGroupList,triggerAndGroupList_core,passedEventsMatrix_Exclusive,WeightedErrorMatrix_Exclusive,rateTriggerTotal,squaredErrorRateTriggerTotal) :
     for dataset in xsectionDatasets:
         totalEventsMatrix[dataset]=0
         for trigger in triggerAndGroupList:
@@ -297,6 +301,8 @@ def setToZero(totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEve
             WeightedErrorMatrix[(dataset,trigger)]=0
             passedEventsMatrix_Pure[(dataset,trigger)]=0
             WeightedErrorMatrix_Pure[(dataset,trigger)]=0
+            passedEventsMatrix_Exclusive[(dataset,trigger)]=0
+            WeightedErrorMatrix_Exclusive[(dataset,trigger)]=0
         for trigger in triggerAndGroupList_core:
             passedEventsMatrix_Core[(dataset,trigger)]=0
             WeightedErrorMatrix_Core[(dataset,trigger)]=0
@@ -490,6 +496,8 @@ def getEvents(input_):
     WeightedErrorMatrix_Pure_={}
     passedEventsMatrix_Core_={}
     WeightedErrorMatrix_Core_={}
+    passedEventsMatrix_Exclusive_={}
+    WeightedErrorMatrix_Exclusive_={}
     #try to open the file and get the TTree
     tree = None
     _file0 = ROOT.TFile.Open(filepath)
@@ -587,6 +595,8 @@ def getEvents(input_):
                 WeightedErrorMatrix_[trigger] = 0
                 passedEventsMatrix_Pure_[trigger] = 0
                 WeightedErrorMatrix_Pure_[trigger] = 0
+                passedEventsMatrix_Exclusive_[trigger] = 0
+                WeightedErrorMatrix_Exclusive_[trigger] = 0
             for trigger in triggerAndGroupList_core:
                 passedEventsMatrix_Core_[trigger] = 0
                 WeightedErrorMatrix_Core_[trigger] = 0
@@ -630,6 +640,8 @@ def getEvents(input_):
                 count_pure_dataset = 0
                 count_pure_stream = 0
                 corelation_dataset_list = []
+                corelation_trigger_list = []
+                corelation_group_list = []
                 PureCount_dic = {}
                 for trigger in triggerAndGroupList:
                     if getTriggerString[trigger] == '0':continue
@@ -649,6 +661,7 @@ def getEvents(input_):
                         if "All" in trigger or "type" in trigger: continue
                         PureCount_dic[("group",trigger)] = tempCount
                         count_pure_group += 1
+                        corelation_group_list.append(trigger)
                     elif trigger in primaryDatasetList:
                         triggerInDatasetList = getTriggerString[trigger].split('||')
                         psMultiple = False
@@ -688,9 +701,14 @@ def getEvents(input_):
                                 #passedEventsMatrix_[trigger] += 1
                                 passedEventsMatrix_[trigger] += 1/float(prescaleMap[trigger][0])
                                 WeightedErrorMatrix_[trigger] += (1/float(prescaleMap[trigger][0]))*(1/float(prescaleMap[trigger][0]))
+                                PureCount_dic[("trigger",trigger)] = float(prescaleMap[trigger][0])
+                                corelation_trigger_list.append(trigger)
                         #print "Event:",u,"passedEventsMatrix_=",passedEventsMatrix_[trigger]
                 #print "*"*30
+                #print "#"*30
+                #print corelation_group_list
                 for (typ,trigger) in PureCount_dic:
+                    if typ == "trigger":	continue
                     if typ == "group":		tmp_PureWeight=count_pure_group 
                     if typ == "dataset":	tmp_PureWeight=count_pure_dataset 
                     if typ == "stream":		tmp_PureWeight=count_pure_stream 
@@ -698,13 +716,22 @@ def getEvents(input_):
                     tempCount = PureCount_dic[(typ,trigger)]*tmp_PureWeight
                     passedEventsMatrix_Pure_[trigger] += 1/float(tempCount)
                     WeightedErrorMatrix_Pure_[trigger] += (1/float(tempCount))*(1/float(tempCount))
+                    #Exclusive rate for group, dataset, trigger:
+                    if evalExclusive_group:
+                        if typ == "group" and count_pure_group == 1:
+                            #print trigger
+                            tempCount = PureCount_dic[(typ,trigger)]
+                            passedEventsMatrix_Exclusive_[trigger] += 1/float(tempCount)
+                            WeightedErrorMatrix_Exclusive_[trigger] += (1/float(tempCount))*(1/float(tempCount))
        
                     #if typ == "group": print "N=%d,  %s : %0.4f,  %0.4f"%(tmp_PureWeight,trigger, 1/float(PureCount_dic[(typ,trigger)]),1/float(tempCount))
                     #if typ == "dataset": print "N=%d,  %s : %0.4f,  %0.4f"%(tmp_PureWeight,trigger, 1/float(PureCount_dic[(typ,trigger)]),1/float(tempCount))
                     #if typ == "stream": print "N=%d,  %s : %0.4f,  %0.4f"%(tmp_PureWeight,trigger, 1/float(PureCount_dic[(typ,trigger)]),1/float(tempCount))
 
                 if evalHLTprimaryDatasets_core:
-                    my_coreelation(corelation_dataset_list, passedEventsMatrix_Core_, WeightedErrorMatrix_Core_, PureCount_dic, "dataset")
+                    my_coreelation(corelation_dataset_list, corelation_dataset_list, passedEventsMatrix_Core_, WeightedErrorMatrix_Core_, PureCount_dic, "dataset", "dataset")
+                if evalHLTTrigger_primaryDatasets_core:
+                    my_coreelation(corelation_trigger_list, corelation_dataset_list, passedEventsMatrix_Core_, WeightedErrorMatrix_Core_, PureCount_dic, "trigger", "dataset")
                     #print passedEventsMatrix_Core_[('HLTPhysics','HLTPhysics')]
 
         else:  #if chain is not undefined/empty set entries to zero
@@ -712,10 +739,11 @@ def getEvents(input_):
             for trigger in triggerAndGroupList:
                 passedEventsMatrix_[trigger] = 0
                 passedEventsMatrix_Pure[trigger] = 0
+                passedEventsMatrix_Exclusive[trigger] = 0
             for trigger in triggerAndGroupList_core:
                 passedEventsMatrix_Core_[trigger] = 0
 
-    return passedEventsMatrix_,totalEventsMatrix_,WeightedErrorMatrix_,passedEventsMatrix_Pure_,WeightedErrorMatrix_Pure_,passedEventsMatrix_Core_,WeightedErrorMatrix_Core_
+    return passedEventsMatrix_,totalEventsMatrix_,WeightedErrorMatrix_,passedEventsMatrix_Pure_,WeightedErrorMatrix_Pure_,passedEventsMatrix_Core_,WeightedErrorMatrix_Core_,passedEventsMatrix_Exclusive_,WeightedErrorMatrix_Exclusive_
 
 ## fill the matrixes of the number of events and the rates for each dataset and trigger
 def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,passedEventsMatrix_Core,WeightedErrorMatrix_Core,rateTriggerDataset,squaredErrorRateTriggerDataset):
@@ -856,8 +884,8 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,WeightedErro
     
         ## get the output
         for input_ in inputs:
-            if multiprocess>1: (passedEventsMatrix_,totalEventsMatrix_,WeightedErrorMatrix_,passedEventsMatrix_Pure_,WeightedErrorMatrix_Pure_,passedEventsMatrix_Core_,WeightedErrorMatrix_Core_) = output[inputs.index(input_)]
-            else: (passedEventsMatrix_,totalEventsMatrix_,WeightedErrorMatrix_,passedEventsMatrix_Pure_,WeightedErrorMatrix_Pure_,passedEventsMatrix_Core_,WeightedErrorMatrix_Core_) = getEvents(input_)
+            if multiprocess>1: (passedEventsMatrix_,totalEventsMatrix_,WeightedErrorMatrix_,passedEventsMatrix_Pure_,WeightedErrorMatrix_Pure_,passedEventsMatrix_Core_,WeightedErrorMatrix_Core_,passedEventsMatrix_Exclusive_,WeightedErrorMatrix_Exclusive_) = output[inputs.index(input_)]
+            else: (passedEventsMatrix_,totalEventsMatrix_,WeightedErrorMatrix_,passedEventsMatrix_Pure_,WeightedErrorMatrix_Pure_,passedEventsMatrix_Core_,WeightedErrorMatrix_Core_,passedEventsMatrix_Exclusive_,WeightedErrorMatrix_Exclusive_) = getEvents(input_)
         
             ##fill passedEventsMatrix[] and totalEventsMatrix[]
             totalEventsMatrix[dataset] += totalEventsMatrix_
@@ -867,6 +895,9 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,passedEventsMatrix,WeightedErro
 
                 passedEventsMatrix_Pure[(dataset,trigger)] += passedEventsMatrix_Pure_[trigger]
                 WeightedErrorMatrix_Pure[(dataset,trigger)] += WeightedErrorMatrix_Pure_[trigger]
+
+                passedEventsMatrix_Exclusive[(dataset,trigger)] += passedEventsMatrix_Exclusive_[trigger]
+                WeightedErrorMatrix_Exclusive[(dataset,trigger)] += WeightedErrorMatrix_Exclusive_[trigger]
               
             for trigger in triggerAndGroupList_core:
                 passedEventsMatrix_Core[(dataset,trigger)] += passedEventsMatrix_Core_[trigger]
@@ -981,6 +1012,8 @@ if evalHLTtwogroups:
     triggerAndGroupList=triggerAndGroupList+twoGroupsList
 if evalHLTprimaryDatasets_core: 
     triggerAndGroupList_core=triggerAndGroupList_core+corelation_datasetList
+if evalHLTTrigger_primaryDatasets_core: 
+    triggerAndGroupList_core=triggerAndGroupList_core+corelation_trigger_datasetList
 #if evalL1:              triggerAndGroupList=triggerAndGroupList+L1List
 
 
@@ -999,13 +1032,16 @@ passedEventsMatrix_Pure = {}                 #passedEventsMatrix[(dataset,trigge
 WeightedErrorMatrix_Pure = {}
 passedEventsMatrix_Core = {}                 #passedEventsMatrix[(dataset,trigger)] = events passed by a trigger in a dataset
 WeightedErrorMatrix_Core = {}
+passedEventsMatrix_Exclusive = {}                 #passedEventsMatrix[(dataset,trigger)] = events passed by a trigger in a dataset
+WeightedErrorMatrix_Exclusive = {}
+
 totalEventsMatrix = {}                  #totalEventsMatrix[(dataset,trigger)] = total events of a dataset
 rateDataset = {}                        #rateDataset[dataset] = rate of a dataset (xsect*lumi)
 rateTriggerDataset = {}                 #rateTriggerDataset[(dataset,trigger)] = rate of a trigger in a dataset
 squaredErrorRateTriggerDataset = {}     #squaredErrorRateTriggerDataset[(dataset,trigger)] = squared error on the rate
 rateTriggerTotal = {}                   #rateTriggerTotal[(dataset,trigger)] = total rate of a trigger
 squaredErrorRateTriggerTotal = {}       #squaredErrorRateTriggerTotal[trigger] = squared error on the rate
-setToZero(totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,passedEventsMatrix_Core,WeightedErrorMatrix_Core,triggerAndGroupList,triggerAndGroupList_core,rateTriggerTotal,squaredErrorRateTriggerTotal)  #fill all dictionaries with zero
+setToZero(totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,passedEventsMatrix_Core,WeightedErrorMatrix_Core,triggerAndGroupList,triggerAndGroupList_core,passedEventsMatrix_Exclusive,WeightedErrorMatrix_Exclusive,rateTriggerTotal,squaredErrorRateTriggerTotal)  #fill all dictionaries with zero
 
 ## create a list with prescales associated to each HLT/L1 trigger path
 prescaleList = {}               # prescaleTriggerTotal[trigger] = prescale from Ntuple                                             
@@ -1064,19 +1100,30 @@ if batchSplit:
         if not os.path.exists(directoryname+"ResultsBatch_Pure_primaryDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_Pure_primaryDatasetEvents")
         if not os.path.exists(directoryname+"ResultsBatch_Pure_streamEvents"): os.makedirs(directoryname+"ResultsBatch_Pure_streamEvents")
         if not os.path.exists(directoryname+"ResultsBatch_Core_primaryDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_Core_primaryDatasetEvents")
+        if not os.path.exists(directoryname+"ResultsBatch_Core_TriggerDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_Core_TriggerDatasetEvents")
+        if not os.path.exists(directoryname+"ResultsBatch_Exclusive_groupEvents"): os.makedirs(directoryname+"ResultsBatch_Exclusive_groupEvents")
+        if not os.path.exists(directoryname+"ResultsBatch_Exclusive_primaryDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_Exclusive_primaryDatasetEvents")
     except:
         pass
 
     ### write files with events count
     if evalL1: writeMatrixEvents(filename+'_L1_matrixEvents_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,L1List,totalEventsMatrix,passedEventsMatrix,True,False)
     if evalHLTpaths: writeMatrixEvents(directoryname+'ResultsBatch_Events/'+filename+'_matrixEvents_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,HLTList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,True,True)
+
     if evalHLTprimaryDatasets: writeMatrixEvents(directoryname+'ResultsBatch_primaryDatasetEvents/'+filename+'_matrixEvents_primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,primaryDatasetList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
     if evalHLTgroups: writeMatrixEvents(directoryname+'ResultsBatch_groupEvents/'+filename+'_matrixEvents_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
     if evalHLTstream: writeMatrixEvents(directoryname+'ResultsBatch_streamEvents/'+filename+'_matrixEvents_stream_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,streamList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
+
     if evalPureRate_Group: writeMatrixEvents(directoryname+'ResultsBatch_Pure_groupEvents/'+filename+'_matrixEvents_Pure_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure)
     if evalPureRate_Dataset: writeMatrixEvents(directoryname+'ResultsBatch_Pure_primaryDatasetEvents/'+filename+'_matrixEvents_Pure_primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,pure_primaryDatasetList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure)
     if evalPureRate_Stream: writeMatrixEvents(directoryname+'ResultsBatch_Pure_streamEvents/'+filename+'_matrixEvents_Pure_Stream_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,streamList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure)
+
+    if evalExclusive_group: writeMatrixEvents(directoryname+'ResultsBatch_Exclusive_groupEvents/'+filename+'_matrixEvents_Exclusive_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix_Exclusive,WeightedErrorMatrix_Exclusive)
+
     if evalHLTprimaryDatasets_core: writeMatrixEvents(directoryname+'ResultsBatch_Core_primaryDatasetEvents/'+filename+'_matrixEvents_Core_primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,corelation_datasetList,totalEventsMatrix,passedEventsMatrix_Core,WeightedErrorMatrix_Core)
+    if evalHLTTrigger_primaryDatasets_core: writeMatrixEvents(directoryname+'ResultsBatch_Core_TriggerDatasetEvents/'+filename+'_matrixEvents_Core_TriggerDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,corelation_trigger_datasetList,totalEventsMatrix,passedEventsMatrix_Core,WeightedErrorMatrix_Core)
+
+
     if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
 
 
@@ -1103,7 +1150,9 @@ else:
     if evalPureRate_Group: writeMatrixEvents(directoryname+filename+'_matrixEvents.Puregroups.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix_Pure)
     if evalPureRate_Dataset: writeMatrixEvents(directoryname+filename+'_matrixEvents.PureprimaryDataset.tsv',datasetList,pure_primaryDatasetList,totalEventsMatrix,passedEventsMatrix_Pure)
     if evalPureRate_Stream: writeMatrixEvents(directoryname+filename+'_matrixEvents.PureStream.tsv',datasetList,streamList,totalEventsMatrix,passedEventsMatrix_Pure)
-    if evalHLTprimaryDatasets_core: writeMatrixEvents(directoryname+filename+'_matrixEvents.CoreprimaryDataset.tsv',datasetList,corelation_datasetList,totalEventsMatrix,passedEventsMatrix_Core)
+    if evalHLTprimaryDatasets_core: writeMatrixEvents(directoryname+filename+'_matrixEvents.CoreTriggerDataset.tsv',datasetList,corelation_trigger_datasetList,totalEventsMatrix,passedEventsMatrix_Core)
+    if evalHLTTrigger_primaryDatasets_core: writeMatrixEvents(directoryname+filename+'_matrixEvents.CoreprimaryDataset.tsv',datasetList,corelation_datasetList,totalEventsMatrix,passedEventsMatrix_Core)
+    if evalExclusive_group: writeMatrixEvents(directoryname+filename+'_matrixEvents.Exclgroups.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix_Exclusive)
     if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups.tsv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
 
     ## write files with  trigger rates

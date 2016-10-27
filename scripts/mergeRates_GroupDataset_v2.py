@@ -22,7 +22,7 @@ def my_print(datasetList):
         print dataset
     print len(datasetList)
 
-def mergeRates(input_dir,output_dir,output_name,keyWord,writeMatrix,type_in='dataset',elementlist=[],writeMatrixRoot=False):
+def ReadRates(input_dir,keyWord):
     wdir = input_dir
     
     ########## Merging the individual path rates
@@ -140,94 +140,132 @@ def mergeRates(input_dir,output_dir,output_name,keyWord,writeMatrix,type_in='dat
         TotalRateList[j] += total_ps
         TotalErrorList[j] = math.sqrt(math.fabs(TotalErrorList[j]))
     
+    return Nlines,rateList,TotalRateList,TotalErrorList,rateDataset,rateDataset_total,TotalEventsPerDataset,datasetListFromFile
+
+def WriteRates(input_dir,output_dir,output_name,keyWord,type_in='',elementlist=[],Plot=False):
+    (Nlines,rateList,TotalRateList,TotalErrorList,rateDataset,rateDataset_total,TotalEventsPerDataset,datasetListFromFile)=ReadRates(input_dir,keyWord)
     ### Filling up the new .tsv file with the content of the python list
-    if not writeMatrix:
-        h = open(output_dir+'/'+output_name, "w")
-        text_rate = 'Path\t\tTotal\t\t\t'
-        for i in range(len(datasetList)):
-            text_rate+=datasetList[i].split('_TuneCUETP8M1_13TeV_pythia8')[0]+'\t\t\t'
-        text_rate += '\n'
+    h = open(output_dir+'/'+output_name, "w")
+    text_rate = 'Path\t\tTotal\t\t\t'
+    for i in range(len(datasetList)):
+        text_rate+=datasetList[i].split('_TuneCUETP8M1_13TeV_pythia8')[0]+'\t\t\t'
+    text_rate += '\n'
+
+    text_rate += "TotalEvents\t\t\t\t"
+    for dataset in datasetList:
+        text_rate += str(TotalEventsPerDataset[dataset])
+        text_rate += "\t\t\t"
+    text_rate = text_rate[:-1]+"\n"
+    h.write(text_rate)
+    for j in xrange (0,Nlines):
+        text_rate = ""
+        text_rate += str(rateList[0][j])
+        text_rate += "\t"
+
+        text_rate += str(TotalRateList[j]*rateDataset_total*File_Factor*lumiSF)
+        text_rate += "\t+/-\t"
+        text_rate += str(TotalErrorList[j]*rateDataset_total*File_Factor*lumiSF)
+        text_rate += "\t"
+        for i in xrange(0,len(datasetList)):
+            if rateList[2*i+3][0]==0:
+                rate = 0
+                error = 0
+            else:
+                rate = rateList[2*i+3][j]*rateDataset[datasetListFromFile[i]]*File_Factor*lumiSF
+                error = math.sqrt(rateList[2*i+4][j])*rateDataset[datasetListFromFile[i]]*File_Factor*lumiSF
+            text_rate += str(rate)
+            text_rate += "\t+/-\t"
+            text_rate += str(error)
+            text_rate += "\t"
     
-        text_rate += "TotalEvents\t\t\t\t"
-        for dataset in datasetList:
-            text_rate += str(TotalEventsPerDataset[dataset])
-            text_rate += "\t\t\t"
         text_rate = text_rate[:-1]+"\n"
         h.write(text_rate)
-        for j in xrange (0,Nlines):
-            text_rate = ""
-            text_rate += str(rateList[0][j])
-            text_rate += "\t"
-    
-            text_rate += str(TotalRateList[j]*rateDataset_total*File_Factor*lumiSF)
-            text_rate += "\t+/-\t"
-            text_rate += str(TotalErrorList[j]*rateDataset_total*File_Factor*lumiSF)
-            text_rate += "\t"
-            for i in xrange(0,len(datasetList)):
-                if rateList[2*i+3][0]==0:
-                    rate = 0
-                    error = 0
-                else:
-                    rate = rateList[2*i+3][j]*rateDataset[datasetListFromFile[i]]*File_Factor*lumiSF
-                    error = math.sqrt(rateList[2*i+4][j])*rateDataset[datasetListFromFile[i]]*File_Factor*lumiSF
-                text_rate += str(rate)
-                text_rate += "\t+/-\t"
-                text_rate += str(error)
-                text_rate += "\t"
-        
-            text_rate = text_rate[:-1]+"\n"
-            h.write(text_rate)
-        h.close()
-    else:
-        h = open(output_dir+'/'+output_name, "w")
-        text_rate_title = '\t'
-        #print elementlist
-        for elem in elementlist:
-            text_rate_title += elem + "\t"
-        text_rate_title += '\n'
-        h.write(text_rate_title)
-        #text_rate = ''
+    h.close()
+    if Plot:
+        import ROOT
         for elem_1 in elementlist:
-            text_rate=elem_1+"\t"
-            for elem_2 in elementlist:
-                tmp_list = rateList[0]
-                j=rateList[0].index(str((elem_1,elem_2)))
-                text_rate += str(TotalRateList[j]*rateDataset_total*File_Factor*lumiSF)
-#                text_rate += "\t+/-\t"
-#                text_rate += str(TotalErrorList[j]*rateDataset_total*File_Factor*lumiSF)
-                text_rate += "\t"
-            text_rate = text_rate[:-1]+"\n"
-            h.write(text_rate)
-        h.close()
-        if writeMatrixRoot:
-            import ROOT
-            lenth = len(elementlist)
-            c1 = ROOT.TCanvas( 'c1', 'A Simple 2D Histogram', 800,640 )
-            c1.SetLeftMargin(0.2)
-            c1.SetRightMargin(0.1)
-            c1.SetBottomMargin(0.2)
-            CorelHisto = ROOT.TH2F('DatasetCorrelHisto','Overlapping rates for %s pairs'%(type_in), lenth, 0, lenth, lenth, 0, lenth)
-            n=1
-            for elem in elementlist:
-                CorelHisto.GetXaxis().SetBinLabel(n,elem)
-                CorelHisto.GetXaxis().LabelsOption("v")
-                CorelHisto.GetYaxis().SetBinLabel(n,elem)
-                CorelHisto.GetYaxis().LabelsOption("v")
-                n+=1
-            i=1
-            for elem_1 in elementlist:
-                j=1
-                for elem_2 in elementlist:
-                    k=rateList[0].index(str((elem_1,elem_2)))
-                    tmp_value = TotalRateList[k]*rateDataset_total*File_Factor*lumiSF
-                    CorelHisto.SetBinContent(i,j,tmp_value)
-                    j+=1
-                i+=1
+            k=rateList[0].index(str(elem_1))
+
+
+def WriteRates_Correlation(input_dir,output_dir,output_name,keyWord,type_in='',elementlist_1=[],elementlist_2=[],Plot=False):
+    (Nlines,rateList,TotalRateList,TotalErrorList,rateDataset,rateDataset_total,TotalEventsPerDataset,datasetListFromFile)=ReadRates(input_dir,keyWord)
+    h = open(output_dir+'/'+output_name, "w")
+    text_rate_title = '\t'
+    #print elementlist
+    for elem in elementlist_2:
+        text_rate_title += elem + "\t"
+    text_rate_title += '\n'
+    h.write(text_rate_title)
+    #text_rate = ''
+    for elem_1 in elementlist_1:
+        text_rate=elem_1+"\t"
+        for elem_2 in elementlist_2:
+            tmp_list = rateList[0]
+            j=rateList[0].index(str((elem_1,elem_2)))
+            text_rate += str(TotalRateList[j]*rateDataset_total*File_Factor*lumiSF)
+#            text_rate += "\t+/-\t"
+#            text_rate += str(TotalErrorList[j]*rateDataset_total*File_Factor*lumiSF)
+            text_rate += "\t"
+        text_rate = text_rate[:-1]+"\n"
+        h.write(text_rate)
+    h.close()
+    if Plot:
+        import ROOT
+        lenth_1 = len(elementlist_1)
+        lenth_2 = len(elementlist_2)
+        c1 = ROOT.TCanvas( 'c1', 'A Simple 2D Histogram', 800,640 )
+        c1.SetLeftMargin(0.2)
+        c1.SetRightMargin(0.1)
+        c1.SetBottomMargin(0.2)
+        CorelHisto = ROOT.TH2F('DatasetCorrelHisto','Overlapping rates for %s pairs'%(type_in), lenth_2, 0, lenth_2, lenth_1, 0, lenth_1)
+        n=1
+        for elem_2 in elementlist_2:
+            CorelHisto.GetXaxis().SetBinLabel(n,elem_2)
+            CorelHisto.GetXaxis().LabelsOption("v")
+            n+=1
+        n=1
+        for elem_1 in elementlist_1:
+            CorelHisto.GetYaxis().SetBinLabel(n,elem_1)
+            CorelHisto.GetYaxis().LabelsOption("v")
+            n+=1
+        i=1
+        for elem_1 in elementlist_1:
+            j=1
+            for elem_2 in elementlist_2:
+                k=rateList[0].index(str((elem_1,elem_2)))
+                tmp_value = TotalRateList[k]*rateDataset_total*File_Factor*lumiSF
+                CorelHisto.SetBinContent(j,i,tmp_value)
+                j+=1
+            i+=1
         CorelHisto.SetStats(0)
-        CorelHisto.Draw("COLZ")
+        ROOT.gStyle.SetPaintTextFormat("0.1f")
+        CorelHisto.SetMarkerSize(1.0)
+        CorelHisto.Draw("COLZ TEXT")
         c1.Print("%s/CorelationRate_%s.png"%(output_dir,type_in))
-        #time.sleep(100)
+        time.sleep(100)
         
+def WriteRates_Correlation_2(input_dir,output_dir,output_name,keyWord,type_in='',elementlist_1=[],elementlist_2=[],Plot=False):
+    (Nlines,rateList,TotalRateList,TotalErrorList,rateDataset,rateDataset_total,TotalEventsPerDataset,datasetListFromFile)=ReadRates(input_dir,keyWord)
+    h = open(output_dir+'/'+output_name, "w")
+    text_rate_title = '\tDataset\t'
+    #print elementlist
+    for elem in elementlist_2:
+        text_rate_title += elem + "\t"
+    text_rate_title += '\n'
+    h.write(text_rate_title)
+    #text_rate = ''
+    for elem_1 in elementlist_1:
+        text_rate=elem_1+"\t"+triggersDatasetMap[elem_1][0]+"\t"
+        for elem_2 in elementlist_2:
+            tmp_list = rateList[0]
+            j=rateList[0].index(str((elem_1,elem_2)))
+            text_rate += str(TotalRateList[j]*rateDataset_total*File_Factor*lumiSF)
+#            text_rate += "\t+/-\t"
+#            text_rate += str(TotalErrorList[j]*rateDataset_total*File_Factor*lumiSF)
+            text_rate += "\t"
+        text_rate = text_rate[:-1]+"\n"
+        h.write(text_rate)
+    h.close()
 
 File_Factor=1.0
 lumiSF=1.0
@@ -235,13 +273,15 @@ UnprescaledCount = True
 
 #start~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-mergeRates("../ResultsBatch/ResultsBatch_groupEvents/","../Results/","output.group.tsv",'matrixEvents_groups_HLTPhysic',False)
-mergeRates("../ResultsBatch/ResultsBatch_Pure_groupEvents/","../Results/","output.puregroup.tsv",'matrixEvents_Pure_groups_',False)
-mergeRates("../ResultsBatch/ResultsBatch_primaryDatasetEvents/","../Results/","output.dataset.tsv",'matrixEvents_primaryDataset_HLTPhysic',False)
-mergeRates("../ResultsBatch/ResultsBatch_Pure_primaryDatasetEvents/","../Results/","output.puredataset.tsv",'matrixEvents_Pure_primaryDataset_',False)
-mergeRates("../ResultsBatch/ResultsBatch_streamEvents/","../Results/","output.stream.tsv",'matrixEvents_stream_HLTPhysic',False)
-mergeRates("../ResultsBatch/ResultsBatch_Pure_streamEvents/","../Results/","output.purestream.tsv",'matrixEvents_Pure_Stream_',False)
-mergeRates("../ResultsBatch/ResultsBatch_Core_primaryDatasetEvents/","../Results/","output.matrix_coredataset.tsv",'matrixEvents_Core_primaryDataset_',True,"dataset",pure_primaryDatasetList,True)
+#WriteRates("../ResultsBatch/ResultsBatch_groupEvents/","../Results/","output.group.tsv",'matrixEvents_groups_HLTPhysic')
+#WriteRates("../ResultsBatch/ResultsBatch_Pure_groupEvents/","../Results/","output.puregroup.tsv",'matrixEvents_Pure_groups_')
+#WriteRates("../ResultsBatch/ResultsBatch_primaryDatasetEvents/","../Results/","output.dataset.tsv",'matrixEvents_primaryDataset_HLTPhysic')
+#WriteRates("../ResultsBatch/ResultsBatch_Pure_primaryDatasetEvents/","../Results/","output.puredataset.tsv",'matrixEvents_Pure_primaryDataset_')
+#WriteRates("../ResultsBatch/ResultsBatch_streamEvents/","../Results/","output.stream.tsv",'matrixEvents_stream_HLTPhysic')
+#WriteRates("../ResultsBatch/ResultsBatch_Pure_streamEvents/","../Results/","output.purestream.tsv",'matrixEvents_Pure_Stream_')
+#WriteRates("../ResultsBatch/ResultsBatch_Exclusive_groupEvents/","../Results/","output.exclgroup.tsv",'matrixEvents_Exclusive_groups_')
+WriteRates_Correlation("../ResultsBatch/ResultsBatch_Core_primaryDatasetEvents/","../Results/","output.matrix_coredataset.tsv",'matrixEvents_Core_primaryDataset_',"dataset",pure_primaryDatasetList,pure_primaryDatasetList,True)
+#WriteRates_Correlation_2("../ResultsBatch/ResultsBatch_Core_TriggerDatasetEvents/","../Results/","output.matrix_coretriggerdataset.tsv",'matrixEvents_Core_TriggerDataset_',"trigger_dataset",triggerList,primaryDatasetList,False)
 
 
 my_print(datasetList)
