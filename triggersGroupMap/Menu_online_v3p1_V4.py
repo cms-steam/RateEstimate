@@ -3051,6 +3051,7 @@ streamList = []
 pure_streamList = []
 groupList = []
 corelation_datasetList = []
+corelation_trigger_datasetList = []
 twoDatasetsList = []
 getTriggerString = {}
 
@@ -3134,8 +3135,14 @@ for dataset1 in primaryDatasetList:
         corelation_datasetList.append((dataset1,dataset2))
         getTriggerString[(dataset1,dataset2)]='0'
 
+for trigger in triggerList:
+    for dataset in primaryDatasetList:
+        corelation_trigger_datasetList.append((trigger,dataset))
+        getTriggerString[(trigger,dataset)]='0'
+
 print groupList
 #print primaryDatasetList
 #print pure_primaryDatasetList
-print streamList
-print pure_streamList
+#print streamList
+#print pure_streamList
+#print corelation_trigger_datasetList
