@@ -55,8 +55,8 @@ evalPureRate_Stream = True
 evalExclusive_group = True
 evalExclusive_dataset = False
 evalExclusive_dataset = False
-use_json = False
-json_file_name = 'json.txt'
+use_json = True
+json_file_name = '/afs/cern.ch/user/n/ndaci/public/STEAM/Production/James_Oct2016_2016G_L1v9_HLTv4p2/json_summary_1p05e34_28_33p5.txt'
 label = "test"         # name of the output files
 runNo = "279694"           #if runNo='0', means code will run for all Run.
 LS_min = '43'
@@ -115,9 +115,11 @@ def check_json(runNo_in, LS):
     import json
     file1=open(json_file_name,'r')
     inp1={}
+    text = ""
     for line1 in file1:
-        inp1 = json.loads(line1)
-        break
+        text+=line1
+    inp1 = json.loads(text)
+    #print inp1.keys()
     if runNo in inp1:
         for part_LS in inp1[runNo]:
             if LS >= part_LS[0] and LS <= part_LS[1]:
