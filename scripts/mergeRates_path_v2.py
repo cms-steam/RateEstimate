@@ -22,21 +22,15 @@ def my_print(datasetList):
         print dataset
     print len(datasetList)
 
-def mergeRates(input_dir,output_name,keyWord,L1write):
+def mergeRates(input_dir,output_name,keyWord,AveWrite):
     wdir = input_dir
     
     ########## Merging the individual path rates
-    h = open(output_name, "w")
-    if L1write:
-        h1 = open(output_name[:-4]+'_L1.tsv', "w")
+#    if L1write:
+#        h1 = open(output_name[:-4]+'_L1.tsv', "w")
     rateList = []
     for i in range(2*len(datasetList)+7):
         rateList.append([]) #0 Prescale
-    
-    text_rate = 'Prescale\tPath\tDataset\tGroup\t\tTotal\t\t\t'
-    for i in range(len(datasetList)):
-        text_rate+=datasetList[i].split('_TuneCUETP8M1_13TeV_pythia8')[0]+'\t\t\t'
-    text_rate += '\n'
     
     rateDataset = {}
     TotalEventsPerDataset = {}
@@ -150,13 +144,22 @@ def mergeRates(input_dir,output_name,keyWord,L1write):
         TotalErrorList[j] = math.sqrt(math.fabs(TotalErrorList[j]))
     
     ### Filling up the new .tsv file with the content of the python list
-
-    text_rate += "\tTotalEvents\t\t\t"
-    for dataset in datasetList:
-        text_rate += str(TotalEventsPerDataset[dataset])
-        text_rate += "\t\t\t"
-    text_rate = text_rate[:-1]+"\n"
+    h = open(output_name, "w")
+    if AveWrite:
+        text_rate = 'Prescale\tPath\tDataset\tGroup\t\tTotal\t\t\tRate / #group\t\t\t'
+    else:
+        text_rate = 'Prescale\tPath\tDataset\tGroup\t\tTotal\t\t\t'
+    for i in range(len(datasetList)):
+        text_rate+=datasetList[i].split('_TuneCUETP8M1_13TeV_pythia8')[0]+'\t\t\t'
+    text_rate += '\n'
     h.write(text_rate)
+
+#    text_rate += "\tTotalEvents\t\t\t"
+#    for dataset in datasetList:
+#        text_rate += str(TotalEventsPerDataset[dataset])
+#        text_rate += "\t\t\t"
+#    text_rate = text_rate[:-1]+"\n"
+#    h.write(text_rate)
     for j in xrange (0,Nlines):
         if rateList[1][j] in triggersGroupMap:
             rateList[0][j]=prescaleMap[rateList[1][j]][0]
@@ -175,6 +178,13 @@ def mergeRates(input_dir,output_name,keyWord,L1write):
         text_rate += "\t+/-\t"
         text_rate += str(TotalErrorList[j]*rateDataset_total*File_Factor*lumiSF)
         text_rate += "\t"
+        if AveWrite:
+            tmp_group_len = len(rateList[3][j].split(','))
+            if tmp_group_len <1: tmp_group_len = 1
+            text_rate += str(TotalRateList[j]*rateDataset_total*File_Factor*lumiSF/float(tmp_group_len))
+            text_rate += "\t+/-\t"
+            text_rate += str(TotalErrorList[j]*rateDataset_total*File_Factor*lumiSF/float(tmp_group_len))
+            text_rate += "\t"
         for i in xrange(0,len(datasetList)):
             if rateList[2*i+6][0]==0:
                 rate = 0
@@ -197,7 +207,8 @@ UnprescaledCount = True
 
 #start~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-mergeRates("../ResultsBatch/ResultsBatch_Events/","../Results/output.tsv",'matrixEvents_HLTPhysics',False)
+mergeRates("../ResultsBatch/ResultsBatch_Events/","../Results/output.tsv",'matrixEvents_HLTPhysics',True)
+mergeRates("../ResultsBatch/ResultsBatch_Pure_Events/","../Results/output.puretrigger.tsv",'matrixEvents_Pure_trigger',True)
 
 
 my_print(datasetList)

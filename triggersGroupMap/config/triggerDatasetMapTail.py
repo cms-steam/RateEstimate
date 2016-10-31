@@ -30,15 +30,10 @@ triggersToRemove = [
     'HLT_ZeroBias_v',
     'HLT_Random_v',
     'HLT_RsqMR240_Rsq0p09_MR200_4jet_v',
-    'HLT_PFHT250_DiPFJetAve90_PFAlphaT0p55_v',
-    'HLT_PFHT300_DiPFJetAve90_PFAlphaT0p53_v',
-    'HLT_PFHT350_DiPFJetAve90_PFAlphaT0p52_v',
-    'HLT_PFHT400_DiPFJetAve90_PFAlphaT0p51_v',
     'HLT_Photon90_CaloIdL_PFHT500_v',
     'HLT_Mu3er_PFHT140_PFMET125_v',
     'HLT_Mu6_PFHT200_PFMET80_BTagCSV_p067_v',
     'HLT_PFMET120_BTagCSV_p067_v',
-    
 ]
 
 pureDatasetToRemove = [
@@ -82,6 +77,7 @@ def remove_pure_stream(stream_in):
 #triggersGroupMap = dict(triggersGroupMap.items())
 
 triggerList = []
+pure_triggerList = []
 L1List = []
 HLTList = []
 #twoHLTsList = []
@@ -108,6 +104,7 @@ for trigger in triggersDatasetMap.keys():
         if (not stream in pure_streamList) and (not remove_pure_stream(stream)):
             pure_streamList.append(stream)
     if remove_trigger(trigger):continue
+    if not (trigger in pure_triggerList) : pure_triggerList.append(trigger)
     for group in triggersGroupMap[trigger]:
         if not group in groupList: groupList.append(group)
 
