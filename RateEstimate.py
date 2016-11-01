@@ -30,6 +30,7 @@ if batchSplit:
 ##### Other configurations #####
 
 folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Run2016G/HLTPhysics_2016G_menu3p1p6_279694/HLTPhysics_ntuples'
+#folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Run2016G/HLTPhysics_2016G_menu4p2_nonCAF/HLTPhysics_ntuples_nonCAF'
 localdir = '/afs/cern.ch/user/x/xgao/eos/cms'
 lumi = 1              # luminosity [s-1cm-2]
 if (batchSplit): multiprocess = 1           # number of processes
@@ -49,13 +50,14 @@ evalHLTTrigger_primaryDatasets_core = True # evaluate HLT triggers primary datas
 evalHLTstream = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
 #evalHLTtwopaths = True    # evaluate the coreelation among the HLT trigger paths rates?
 evalHLTtwogroups = False   # evaluate the coreelation among the HLT trigger groups rates?
+evalPureRate_Trigger = True
 evalPureRate_Group = True
 evalPureRate_Dataset = True
 evalPureRate_Stream = True
 evalExclusive_group = True
 evalExclusive_dataset = False
 evalExclusive_dataset = False
-use_json = True
+use_json = False
 json_file_name = '/afs/cern.ch/user/n/ndaci/public/STEAM/Production/James_Oct2016_2016G_L1v9_HLTv4p2/json_summary_1p05e34_28_33p5.txt'
 label = "test"         # name of the output files
 runNo = "279694"           #if runNo='0', means code will run for all Run.
@@ -98,7 +100,7 @@ import shlex
 import subprocess
 import json
 
-ROOT.TFormula.SetMaxima(10000,10000,10000) # Allows to extend the number of operators in a root TFormula. Needed to evaluate the .Draw( ,OR string) in the GetEvents function
+#ROOT.TFormula.SetMaxima(10000,10000,10000) # Allows to extend the number of operators in a root TFormula. Needed to evaluate the .Draw( ,OR string) in the GetEvents function
 
 ##### Function definition #####
 
@@ -572,13 +574,13 @@ def getEvents(input_):
     else:
         #if tree is defined, get totalEvents and passedEvents
         if (tree!=None):
-            if isData:
-#                print denominatorString
-                totalEventsMatrix_ = tree.Draw("",denominatorString)
-                if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSign<0)&&("+denominatorString+")")
-            else:
-                totalEventsMatrix_ = tree.Draw("",'('+denominatorString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
-                if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSign<0)&&("+denominatorString+")&&(NPUTrueBX0<="+str(pileupMAX)+")&&(NPUTrueBX0>="+str(pileupMIN)+")") 
+#            if isData:
+##                print denominatorString
+#                totalEventsMatrix_ = tree.Draw("",denominatorString)
+#                if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSign<0)&&("+denominatorString+")")
+#            else:
+#                totalEventsMatrix_ = tree.Draw("",'('+denominatorString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
+#                if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("","(MCWeightSign<0)&&("+denominatorString+")&&(NPUTrueBX0<="+str(pileupMAX)+")&&(NPUTrueBX0>="+str(pileupMIN)+")") 
             N = tree.GetEntries()
             if evalHLTpaths: passedEventsMatrix_['All_HLT'] = 0
             if evalL1: passedEventsMatrix_['L1'] = 0
@@ -617,12 +619,16 @@ def getEvents(input_):
 #            print '%s : %d , total : %d'%("HLT_Mu20_v3",tree.Draw("","HLT_Mu20_v3"),Total_count)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             for event in tree:
-                Total_count +=1
                 if use_json:
+                   #print int(getattr(event,'Run'))
+                   #print int(getattr(event,'LumiBlock'))
                    if (not check_json(int(getattr(event,'Run')),int(getattr(event,'LumiBlock')))):continue
+                   #if (not check_json(280242,492)):continue
+                   #print "right"
                 else :
                     if (int(runNo) != 0) and int(getattr(event,'Run')) != int(runNo):continue
                     if (int(runNo) != 0) and (int(getattr(event,'LumiBlock')) < int(LS_min) or int(getattr(event,'LumiBlock')) > int(LS_max)):continue
+                Total_count +=1
                 #if u==N: break
                 if u%(N/50)==0: print "\r{0:.1f} %".format(100*float(u)/float(N))
                 u += 1 
@@ -638,6 +644,7 @@ def getEvents(input_):
                 stringMemory = ""
                 psMultiple = False
                 tmp_PureWeight = 0
+                count_pure_trigger = 0
                 count_pure_group = 0
                 count_pure_dataset = 0
                 count_pure_stream = 0
@@ -705,12 +712,14 @@ def getEvents(input_):
                                 WeightedErrorMatrix_[trigger] += (1/float(prescaleMap[trigger][0]))*(1/float(prescaleMap[trigger][0]))
                                 PureCount_dic[("trigger",trigger)] = float(prescaleMap[trigger][0])
                                 corelation_trigger_list.append(trigger)
+                                if trigger in pure_triggerList:
+                                    count_pure_trigger += 1
                         #print "Event:",u,"passedEventsMatrix_=",passedEventsMatrix_[trigger]
                 #print "*"*30
                 #print "#"*30
                 #print corelation_group_list
                 for (typ,trigger) in PureCount_dic:
-                    if typ == "trigger":	continue
+                    if typ == "trigger":	tmp_PureWeight=count_pure_trigger
                     if typ == "group":		tmp_PureWeight=count_pure_group 
                     if typ == "dataset":	tmp_PureWeight=count_pure_dataset 
                     if typ == "stream":		tmp_PureWeight=count_pure_stream 
@@ -735,6 +744,7 @@ def getEvents(input_):
                 if evalHLTTrigger_primaryDatasets_core:
                     my_coreelation(corelation_trigger_list, corelation_dataset_list, passedEventsMatrix_Core_, WeightedErrorMatrix_Core_, PureCount_dic, "trigger", "dataset")
                     #print passedEventsMatrix_Core_[('HLTPhysics','HLTPhysics')]
+            totalEventsMatrix_ = Total_count
 
         else:  #if chain is not undefined/empty set entries to zero
             totalEventsMatrix_ = 0
@@ -1025,6 +1035,7 @@ if evalHLTTrigger_primaryDatasets_core:
 #if evalL1:              triggerList=triggerList+L1List
 ## check trigger list in triggersGroupMap (ie. ~ Google doc), with trigger bits in ntuples (ie. GRun)
 if evalHLTpaths or evalL1: triggerList = CompareGRunVsGoogleDoc(datasetList,triggerList,folder)
+if evalPureRate_Trigger: pure_triggerList = CompareGRunVsGoogleDoc(datasetList,pure_triggerList,folder)
 
 
 # define dictionaries
@@ -1098,6 +1109,7 @@ if batchSplit:
         if not os.path.exists(directoryname+"ResultsBatch_groupEvents"): os.makedirs(directoryname+"ResultsBatch_groupEvents")
         if not os.path.exists(directoryname+"ResultsBatch_primaryDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_primaryDatasetEvents")
         if not os.path.exists(directoryname+"ResultsBatch_streamEvents"): os.makedirs(directoryname+"ResultsBatch_streamEvents")
+        if not os.path.exists(directoryname+"ResultsBatch_Pure_Events"): os.makedirs(directoryname+"ResultsBatch_Pure_Events")
         if not os.path.exists(directoryname+"ResultsBatch_Pure_groupEvents"): os.makedirs(directoryname+"ResultsBatch_Pure_groupEvents")
         if not os.path.exists(directoryname+"ResultsBatch_Pure_primaryDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_Pure_primaryDatasetEvents")
         if not os.path.exists(directoryname+"ResultsBatch_Pure_streamEvents"): os.makedirs(directoryname+"ResultsBatch_Pure_streamEvents")
@@ -1116,6 +1128,7 @@ if batchSplit:
     if evalHLTgroups: writeMatrixEvents(directoryname+'ResultsBatch_groupEvents/'+filename+'_matrixEvents_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
     if evalHLTstream: writeMatrixEvents(directoryname+'ResultsBatch_streamEvents/'+filename+'_matrixEvents_stream_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,streamList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
 
+    if evalPureRate_Trigger: writeMatrixEvents(directoryname+'ResultsBatch_Pure_Events/'+filename+'_matrixEvents_Pure_trigger_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,pure_triggerList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,True,True)
     if evalPureRate_Group: writeMatrixEvents(directoryname+'ResultsBatch_Pure_groupEvents/'+filename+'_matrixEvents_Pure_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure)
     if evalPureRate_Dataset: writeMatrixEvents(directoryname+'ResultsBatch_Pure_primaryDatasetEvents/'+filename+'_matrixEvents_Pure_primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,pure_primaryDatasetList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure)
     if evalPureRate_Stream: writeMatrixEvents(directoryname+'ResultsBatch_Pure_streamEvents/'+filename+'_matrixEvents_Pure_Stream_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,streamList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure)
@@ -1149,6 +1162,7 @@ else:
     if evalHLTprimaryDatasets: writeMatrixEvents(directoryname+filename+'_matrixEvents.primaryDataset.tsv',datasetList,primaryDatasetList,totalEventsMatrix,passedEventsMatrix)
     if evalHLTstream: writeMatrixEvents(directoryname+filename+'_matrixEvents.stream.tsv',datasetList,streamList,totalEventsMatrix,passedEventsMatrix)
     if evalHLTgroups: writeMatrixEvents(directoryname+filename+'_matrixEvents.groups.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix)
+    if evalPureRate_Trigger: writeMatrixEvents(directoryname+filename+'_matrixEvents.Puretrigger.tsv',datasetList,pure_triggerList,totalEventsMatrix,passedEventsMatrix_Pure,True,True)
     if evalPureRate_Group: writeMatrixEvents(directoryname+filename+'_matrixEvents.Puregroups.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix_Pure)
     if evalPureRate_Dataset: writeMatrixEvents(directoryname+filename+'_matrixEvents.PureprimaryDataset.tsv',datasetList,pure_primaryDatasetList,totalEventsMatrix,passedEventsMatrix_Pure)
     if evalPureRate_Stream: writeMatrixEvents(directoryname+filename+'_matrixEvents.PureStream.tsv',datasetList,streamList,totalEventsMatrix,passedEventsMatrix_Pure)
