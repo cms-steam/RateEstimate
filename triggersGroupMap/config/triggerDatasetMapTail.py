@@ -39,6 +39,16 @@ triggersToRemove = [
 pureDatasetToRemove = [
     'HLTPhysics*',
     'Parking*',
+    'HcalHPDNoise',
+    'EmptyBX',
+    'HcalNZS',
+    'HINCaloJets',
+    'HINPhoton',
+    'HighMultiplicity85EOF',
+    'HighMultiplicityEOF',
+    'FSQJets',
+    'L1MinimumBias',
+    'HINPFJets',
 ]
 def remove_trigger(trigger_in):
     if trigger_in in triggersToRemove:
@@ -137,12 +147,12 @@ for trigger in HLTList:
     else: getTriggerString['All_HLT']=trigger
 
 ## Fill string for prescaled paths
-groupList.append('All_PSed')
-for trigger in HLTList:
-    if remove_trigger(trigger):continue
-    if int(prescaleMap[trigger][0]) <=1 : continue
-    if 'All_PSed' in getTriggerString.keys(): getTriggerString['All_PSed']+='||'+trigger
-    else: getTriggerString['All_PSed']=trigger
+#groupList.append('All_PSed')
+#for trigger in HLTList:
+#    if remove_trigger(trigger):continue
+#    if int(prescaleMap[trigger][0]) <=1 : continue
+#    if 'All_PSed' in getTriggerString.keys(): getTriggerString['All_PSed']+='||'+trigger
+#    else: getTriggerString['All_PSed']=trigger
 
 ## Fill string for type
 if triggersTypeMap:
@@ -178,6 +188,7 @@ for trigger in triggerList:
         getTriggerString[(trigger,dataset)]='0'
 
 print groupList
+#print pure_triggerList
 #print primaryDatasetList
 #print pure_primaryDatasetList
 #print streamList

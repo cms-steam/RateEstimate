@@ -12,6 +12,7 @@ Method = 1 #0: rate = count ; 1:HLT, rate = psNorm*count / LS*nLS ; 2:Zerobias, 
 LS = 23.31
 PsNorm = 107*7.
 nLS = 246-43+1
+nLS = 0
 ps_const = 11245.0*2200.0
 for dataset in datasetList:
     xsection = xsectionDatasets[dataset]
@@ -21,6 +22,25 @@ def my_print(datasetList):
     for dataset in datasetList:
         print dataset
     print len(datasetList)
+
+def getLS(input_dir, keyWord):
+    tmp_dic = {}
+    tmp_list = []
+    for dataset in datasetList:
+        tmp_dic[dataset] = 0
+    wdir = input_dir
+    for LS_file in os.listdir(wdir):
+        tmp_file = open(wdir+LS_file,'r')
+        for Line in tmp_file:
+            line = Line.replace('\n','')
+            if not line in tmp_list:
+                tmp_list.append(line)
+    for ls in tmp_list:
+        for dataset in datasetList:
+            if dataset in ls:
+                tmp_dic[dataset] += 1 
+    return tmp_dic
+
 
 def mergeRates(input_dir,output_name,keyWord,AveWrite):
     wdir = input_dir
@@ -113,8 +133,11 @@ def mergeRates(input_dir,output_name,keyWord,AveWrite):
     if Method==1:
         total_LS = 0
         for dataset in datasetList:
-            rateDataset [dataset] = PsNorm/(nLS*LS)
-            total_LS += nLS
+            if nLS_dic[dataset] == 0:
+                rateDataset [dataset] = 0
+            else:
+                rateDataset [dataset] = PsNorm/(nLS_dic[dataset]*LS)
+            total_LS += nLS_dic[dataset]
         rateDataset_total = PsNorm/(total_LS*LS)
     elif Method==2:
         rateDataset_total = 0
@@ -161,7 +184,7 @@ def mergeRates(input_dir,output_name,keyWord,AveWrite):
 #    text_rate = text_rate[:-1]+"\n"
 #    h.write(text_rate)
     for j in xrange (0,Nlines):
-        if rateList[1][j] in triggersGroupMap:
+        if rateList[1][j] in prescaleMap:
             rateList[0][j]=prescaleMap[rateList[1][j]][0]
     for j in xrange (0,Nlines):
         text_rate = ""
@@ -186,9 +209,9 @@ def mergeRates(input_dir,output_name,keyWord,AveWrite):
             text_rate += str(TotalErrorList[j]*rateDataset_total*File_Factor*lumiSF/float(tmp_group_len))
             text_rate += "\t"
         for i in xrange(0,len(datasetList)):
-            if rateList[2*i+6][0]==0:
-                rate = 0
-                error = 0
+            if rateList[0][j]==0:
+                rate = 0.0
+                error = 0.0
             else:
                 rate = rateList[2*i+6][j]*rateDataset[datasetListFromFile[i]]*File_Factor*lumiSF
                 error = math.sqrt(rateList[2*i+7][j])*rateDataset[datasetListFromFile[i]]*File_Factor*lumiSF
@@ -206,9 +229,16 @@ lumiSF=1.0
 UnprescaledCount = True
 
 #start~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-mergeRates("../ResultsBatch/ResultsBatch_Events/","../Results/output.tsv",'matrixEvents_HLTPhysics',True)
-mergeRates("../ResultsBatch/ResultsBatch_Pure_Events/","../Results/output.puretrigger.tsv",'matrixEvents_Pure_trigger',True)
+nLS_dic = {}
+if Method == 1: 
+    if nLS <= 0:
+        nLS_dic = getLS("../ResultsBatch/ResultsBatch_LS/",'matrixEvents_HLTPhysics')
+    else:
+        for dataset in datasetList:
+            nLS_dic[dataset] = nLS
+print nLS_dic
+#mergeRates("../ResultsBatch/ResultsBatch_Events/","../Results/output.tsv",'matrixEvents_HLTPhysics',True)
+mergeRates("../ResultsBatch/ResultsBatch_Exclusive_Events/","../Results/output.excltrigger.tsv",'matrixEvents_Exclusive_trigger',True)
 
 
 my_print(datasetList)
