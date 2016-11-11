@@ -9,6 +9,8 @@ column_type = 3
 column_group = 4
 column_ps = 52
 
+use_prescaled_ntuples = False
+
 triggerDataset = {}
 triggerStream = {}
 triggerGroup = {}
@@ -118,6 +120,8 @@ for Line in open(file_menu,'r'):
             prescale = prescale.replace(',','.')
             tmp_ps = float(prescale)
             if tmp_ps !=0 and tmp_ps <1:
+                tmp_ps = 1
+            if use_prescaled_ntuples and tmp_ps > 0:
                 tmp_ps = 1
             tmp_list.append(str(int(tmp_ps)))
             prescaleMap[trigger] = tmp_list

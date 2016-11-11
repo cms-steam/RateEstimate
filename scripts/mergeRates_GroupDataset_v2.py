@@ -12,10 +12,28 @@ Method = 1 #0: rate = count ; 1:HLT, rate = psNorm*count / LS*nLS ; 2:Zerobias, 
 LS = 23.31
 PsNorm = 107*7.
 nLS = 246-43+1
+nLS = 0 
 ps_const = 11245.0*2200.0
 for dataset in datasetList:
     xsection = xsectionDatasets[dataset]
 
+def getLS(input_dir, keyWord):
+    tmp_dic = {}
+    tmp_list = []
+    for dataset in datasetList:
+        tmp_dic[dataset] = 0
+    wdir = input_dir
+    for LS_file in os.listdir(wdir):
+        tmp_file = open(wdir+LS_file,'r')
+        for Line in tmp_file:
+            line = Line.replace('\n','')
+            if not line in tmp_list:
+                tmp_list.append(line)
+    for ls in tmp_list:
+        for dataset in datasetList:
+            if dataset in ls:
+                tmp_dic[dataset] += 1
+    return tmp_dic
 
 def my_print(datasetList):
     for dataset in datasetList:
@@ -110,8 +128,11 @@ def ReadRates(input_dir,keyWord):
     if Method==1:
         total_LS = 0
         for dataset in datasetList:
-            rateDataset [dataset] = PsNorm/(nLS*LS)
-            total_LS += nLS
+            if nLS_dic[dataset] == 0:
+                rateDataset [dataset] = 0
+            else:
+                rateDataset [dataset] = PsNorm/(nLS_dic[dataset]*LS)
+            total_LS += nLS_dic[dataset]
         rateDataset_total = PsNorm/(total_LS*LS)
     elif Method==2:
         rateDataset_total = 0
@@ -186,6 +207,45 @@ def WriteRates(input_dir,output_dir,output_name,keyWord,type_in='',elementlist=[
         for elem_1 in elementlist:
             k=rateList[0].index(str(elem_1))
 
+def WriteRates_2(input_dir,output_dir,output_name,keyWord,type_in='',elementlist=[],Plot=False):
+    (Nlines,rateList,TotalRateList,TotalErrorList,rateDataset,rateDataset_total,TotalEventsPerDataset,datasetListFromFile)=ReadRates(input_dir,keyWord)
+    ### Filling up the new .tsv file with the content of the python list
+    h = open(output_dir+'/'+output_name, "w")
+    text_rate = 'Path\t\tTotal\t\t\t'
+    for i in range(len(datasetList)):
+        text_rate+=datasetList[i].split('_TuneCUETP8M1_13TeV_pythia8')[0]+'\t\t\t'
+    text_rate += '\n'
+
+    text_rate += "TotalEvents\t\t\t\t"
+    for dataset in datasetList:
+        text_rate += str(TotalEventsPerDataset[dataset])
+        text_rate += "\t\t\t"
+    text_rate = text_rate[:-1]+"\n"
+    h.write(text_rate)
+    for j in xrange (0,Nlines):
+        text_rate = ""
+        text_rate += str(rateList[0][j])
+        text_rate += "\t"
+
+        text_rate += str(TotalRateList[j]*rateDataset_total*File_Factor*lumiSF)
+        text_rate += "\t+/-\t"
+        text_rate += str(TotalErrorList[j]*rateDataset_total*File_Factor*lumiSF)
+        text_rate += "\t"
+        for i in xrange(0,len(datasetList)):
+            if rateList[2*i+3][0]==0:
+                rate = 0
+                error = 0
+            else:
+                rate = rateList[2*i+3][j]*rateDataset[datasetListFromFile[i]]*File_Factor*lumiSF
+                error = math.sqrt(rateList[2*i+4][j])*rateDataset[datasetListFromFile[i]]*File_Factor*lumiSF
+            text_rate += str(rate)
+            text_rate += "\t+/-\t"
+            text_rate += str(error)
+            text_rate += "\t"
+    
+        text_rate = text_rate[:-1]+"\n"
+        h.write(text_rate)
+    h.close()
 
 def WriteRates_Correlation(input_dir,output_dir,output_name,keyWord,type_in='',elementlist_1=[],elementlist_2=[],Plot=False):
     (Nlines,rateList,TotalRateList,TotalErrorList,rateDataset,rateDataset_total,TotalEventsPerDataset,datasetListFromFile)=ReadRates(input_dir,keyWord)
@@ -242,7 +302,7 @@ def WriteRates_Correlation(input_dir,output_dir,output_name,keyWord,type_in='',e
         CorelHisto.SetMarkerSize(1.0)
         CorelHisto.Draw("COLZ TEXT")
         c1.Print("%s/CorelationRate_%s.png"%(output_dir,type_in))
-        time.sleep(100)
+        time.sleep(1)
         
 def WriteRates_Correlation_2(input_dir,output_dir,output_name,keyWord,type_in='',elementlist_1=[],elementlist_2=[],Plot=False):
     (Nlines,rateList,TotalRateList,TotalErrorList,rateDataset,rateDataset_total,TotalEventsPerDataset,datasetListFromFile)=ReadRates(input_dir,keyWord)
@@ -272,15 +332,23 @@ lumiSF=1.0
 UnprescaledCount = True
 
 #start~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+nLS_dic = {}
+if Method == 1:
+    if nLS <= 0:
+        nLS_dic = getLS("../ResultsBatch/ResultsBatch_LS/",'matrixEvents_HLTPhysics')
+    else:
+        for dataset in datasetList:
+            nLS_dic[dataset] = nLS
+print nLS_dic
 
-#WriteRates("../ResultsBatch/ResultsBatch_groupEvents/","../Results/","output.group.tsv",'matrixEvents_groups_HLTPhysic')
+WriteRates("../ResultsBatch/ResultsBatch_groupEvents/","../Results/","output.group.tsv",'matrixEvents_groups_HLTPhysic')
 #WriteRates("../ResultsBatch/ResultsBatch_Pure_groupEvents/","../Results/","output.puregroup.tsv",'matrixEvents_Pure_groups_')
 #WriteRates("../ResultsBatch/ResultsBatch_primaryDatasetEvents/","../Results/","output.dataset.tsv",'matrixEvents_primaryDataset_HLTPhysic')
 #WriteRates("../ResultsBatch/ResultsBatch_Pure_primaryDatasetEvents/","../Results/","output.puredataset.tsv",'matrixEvents_Pure_primaryDataset_')
 #WriteRates("../ResultsBatch/ResultsBatch_streamEvents/","../Results/","output.stream.tsv",'matrixEvents_stream_HLTPhysic')
 #WriteRates("../ResultsBatch/ResultsBatch_Pure_streamEvents/","../Results/","output.purestream.tsv",'matrixEvents_Pure_Stream_')
 #WriteRates("../ResultsBatch/ResultsBatch_Exclusive_groupEvents/","../Results/","output.exclgroup.tsv",'matrixEvents_Exclusive_groups_')
-WriteRates_Correlation("../ResultsBatch/ResultsBatch_Core_primaryDatasetEvents/","../Results/","output.matrix_coredataset.tsv",'matrixEvents_Core_primaryDataset_',"dataset",pure_primaryDatasetList,pure_primaryDatasetList,True)
+#WriteRates_Correlation("../ResultsBatch/ResultsBatch_Core_primaryDatasetEvents/","../Results/","output.matrix_coredataset.tsv",'matrixEvents_Core_primaryDataset_',"dataset",pure_primaryDatasetList,pure_primaryDatasetList,True)
 #WriteRates_Correlation_2("../ResultsBatch/ResultsBatch_Core_TriggerDatasetEvents/","../Results/","output.matrix_coretriggerdataset.tsv",'matrixEvents_Core_TriggerDataset_',"trigger_dataset",triggerList,primaryDatasetList,False)
 
 
