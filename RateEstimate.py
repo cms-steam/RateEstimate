@@ -3,12 +3,12 @@
 
 ########## Configuration #####################################################################
 from triggersGroupMap.Menu_online_v3p1_V4 import *
-from datasetCrossSections.datasetCrossSectionsHLTPhysics import *
+from datasetCrossSections.datasetCrossSections_MC_test import *
 
-batchSplit = False
 batchSplit = True
-looping = False
+batchSplit = False
 looping = True
+looping = False
 
 ##### Adding an option to the code #####
 
@@ -23,39 +23,39 @@ if batchSplit:
 
 ##### Other configurations #####
 
-folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Run2016G/HLTPhysics_2016G_menu3p1p6_279694/HLTPhysics_ntuples'
+folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Spring16_FlatPU8to37/HLTRates_v4p1_V3_1.15e34_MC_20161115'
 localdir = '/afs/cern.ch/user/x/xgao/eos/cms'
 lumi = 1              # luminosity [s-1cm-2]
 if (batchSplit): multiprocess = 1           # number of processes
 else: multiprocess = 1 # 8 multiprocessing disbaled for now because of incompatibilities with the way the files are accessed. Need some development.
-pileupMAX = 100
-pileupMIN = 0
+pileupMAX = 50
+pileupMIN = 1
 pileupFilter = False        # use pile-up filter?
 pileupFilterGen = False    # use pile-up filter gen or L1?
-useEMEnriched = False       # use plain QCD mu-enriched samples (Pt30to170)?
+useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = False       # use plain QCD EM-enriched samples (Pt30to170)?
 evalL1 = False              # evaluate L1 triggers rates?
 evalHLTpaths = True        # evaluate HLT triggers rates?
 evalHLTgroups = True       # evaluate HLT triggers groups rates and global HLT and L1 rates
 evalHLTprimaryDatasets = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
-evalHLTprimaryDatasets_core = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
-evalHLTTrigger_primaryDatasets_core = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
+evalHLTprimaryDatasets_core = False # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
+evalHLTTrigger_primaryDatasets_core = False # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
 evalHLTstream = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
 #evalHLTtwopaths = True    # evaluate the coreelation among the HLT trigger paths rates?
 evalHLTtwogroups = False   # evaluate the coreelation among the HLT trigger groups rates?
-evalPureRate_Group = True
-evalPureRate_Dataset = True
-evalPureRate_Stream = True
-evalExclusive_Trigger = True
-evalExclusive_group = True
+evalPureRate_Group = False
+evalPureRate_Dataset = False
+evalPureRate_Stream = False
+evalExclusive_Trigger = False
+evalExclusive_group = False
 evalExclusive_dataset = False
 evalExclusive_stream = False
 use_json = False
 json_file_name = '/afs/cern.ch/user/n/ndaci/public/STEAM/Production/James_Oct2016_2016G_L1v9_HLTv4p2/json_summary_1p05e34_28_33p5.txt'
-label = "test"         # name of the output files
-runNo = "279694"           #if runNo='0', means code will run for all Run.
-LS_min = '43'
-LS_max = '246'            #default is 9999
+label = "mc_test"         # name of the output files
+runNo = "0"           #if runNo='0', means code will run for all Run.
+LS_min = '0'
+LS_max = '9999'            #default is 9999
 
 isData = True
 ## L1Rate studies as a function of PU and number of bunches:
@@ -93,7 +93,7 @@ import shlex
 import subprocess
 import json
 
-#ROOT.TFormula.SetMaxima(10000,10000,10000) # Allows to extend the number of operators in a root TFormula. Needed to evaluate the .Draw( ,OR string) in the GetEvents function
+ROOT.TFormula.SetMaxima(10000,10000,10000) # Allows to extend the number of operators in a root TFormula. Needed to evaluate the .Draw( ,OR string) in the GetEvents function
 
 ##### Function definition #####
 
@@ -507,6 +507,18 @@ def getEvents(input_):
     WeightedErrorMatrix_Core_={}
     passedEventsMatrix_Exclusive_={}
     WeightedErrorMatrix_Exclusive_={}
+
+    for trigger in triggerAndGroupList:
+        passedEventsMatrix_[trigger] = 0
+        WeightedErrorMatrix_[trigger] = 0
+        passedEventsMatrix_Pure_[trigger] = 0
+        WeightedErrorMatrix_Pure_[trigger] = 0
+        passedEventsMatrix_Exclusive_[trigger] = 0
+        WeightedErrorMatrix_Exclusive_[trigger] = 0
+    for trigger in triggerAndGroupList_core:
+        passedEventsMatrix_Core_[trigger] = 0
+        WeightedErrorMatrix_Core_[trigger] = 0
+
     #try to open the file and get the TTree
     tree = None
     _file0 = ROOT.TFile.Open(filepath)
@@ -529,31 +541,46 @@ def getEvents(input_):
             for t in getTriggerString:
                 getTriggerString1[t]=getTriggerString[t]
             for group in groupList:
+#                print "#"*100
+#                print group
                 groupPathList = getTriggerString1[group].split('||')
-                print getTriggerString1[group]
-                print "*"*50
+#                print getTriggerString1[group]
+#                print "*"*50
                 getTriggerString1[group] = '0'
                 for triggerPath in groupPathList:
                     if triggerPath in triggerList:
                         triggerAlias = root_alias_dic[triggerPath] 
                         if getTriggerString1[group]!='0': getTriggerString1[group] += '||'+triggerAlias
                         else: getTriggerString1[group] = triggerAlias
-                print getTriggerString1[group]
-                print "*"*50
+#                print getTriggerString1[group]
+#                print "*"*50
     
     
             for dataset in primaryDatasetList:
                 datasetPathList = getTriggerString1[dataset].split('||')
-                print getTriggerString1[dataset]
-                print "*"*50
+#                print getTriggerString1[dataset]
+#                print "*"*50
                 getTriggerString1[dataset] = '0'
                 for triggerPath in datasetPathList:
                     if triggerPath in triggerList:
                         triggerAlias = root_alias_dic[triggerPath]
                         if getTriggerString1[dataset]!='0': getTriggerString1[dataset] += '||'+triggerAlias
                         else: getTriggerString1[dataset] = triggerAlias
-                print getTriggerString1[dataset]
-                print "*"*50
+#                print getTriggerString1[dataset]
+#                print "*"*50
+
+            for stream in streamList:
+                streamPathList = getTriggerString1[stream].split('||')
+#                print getTriggerString1[stream]
+#                print "*"*50
+                getTriggerString1[stream] = '0'
+                for triggerPath in streamPathList:
+                    if triggerPath in triggerList:
+                        triggerAlias = root_alias_dic[triggerPath]
+                        if getTriggerString1[stream]!='0': getTriggerString1[stream] += '||'+triggerAlias
+                        else: getTriggerString1[stream] = triggerAlias
+#                print getTriggerString1[stream]
+#                print "*"*50
 
         #if tree is defined, get totalEvents and passedEvents
         if (tree!=None): 
@@ -570,8 +597,10 @@ def getEvents(input_):
                     passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString1[trigger]+')&&('+filterString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
                     if withNegativeWeights: passedEventsMatrix_[trigger] = passedEventsMatrix_[trigger] - 2*tree.Draw("",'(MCWeightSign<0)&&('+getTriggerString1[trigger]+')&&('+filterString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
             _file0.Close()
+            totalLSMatrix_ = 0 
         else:  #if tree is not undefined/empty set enties to zero
             totalEventsMatrix_ = 0
+            totalLSMatrix_ = 0 
             for trigger in triggerAndGroupList:
                 passedEventsMatrix_[trigger] = 0
     
@@ -599,16 +628,6 @@ def getEvents(input_):
                 for trigger in triggersL1GroupMap.keys():
                     L1PrescDict[trigger] = triggersL1GroupMap[trigger][lumiColumn]
         
-            for trigger in triggerAndGroupList:
-                passedEventsMatrix_[trigger] = 0
-                WeightedErrorMatrix_[trigger] = 0
-                passedEventsMatrix_Pure_[trigger] = 0
-                WeightedErrorMatrix_Pure_[trigger] = 0
-                passedEventsMatrix_Exclusive_[trigger] = 0
-                WeightedErrorMatrix_Exclusive_[trigger] = 0
-            for trigger in triggerAndGroupList_core:
-                passedEventsMatrix_Core_[trigger] = 0
-                WeightedErrorMatrix_Core_[trigger] = 0
             # Looping over the events to compute the rates
             u = 0
             #N = 100.
