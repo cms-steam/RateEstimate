@@ -5,12 +5,12 @@ sys.path.append("../")
 import os  
 import csv
 import math
+from triggersGroupMap.HLT_Menu_v4p2_v6_L1_v9_fake import *
 from datasetCrossSections.datasetCrossSectionsHLTPhysics import *
-from triggersGroupMap.Menu_online_v3p1_V4 import *
 
 Method = 1 #0: rate = count ; 1:HLT, rate = psNorm*count / LS*nLS ; 2:Zerobias, rate = 11245Hz * target nBunchs * nCount/total Event
 LS = 23.31
-PsNorm = 107*7.
+PsNorm = 107*4.
 nLS = 246-43+1
 nLS = 0
 ps_const = 11245.0*2200.0
@@ -42,12 +42,17 @@ def getLS(input_dir, keyWord):
     return tmp_dic
 
 
-def mergeRates(input_dir,output_name,keyWord,AveWrite):
+def mergeRates(input_dir,output_name,keyWord,AveWrite,writeGroup,writeDataset):
     wdir = input_dir
     
     ########## Merging the individual path rates
 #    if L1write:
 #        h1 = open(output_name[:-4]+'_L1.tsv', "w")
+    rate_start = 1
+    if writeGroup:
+        rate_start += 1
+    if writeDataset:
+        rate_start += 1
     rateList = []
     for i in range(2*len(datasetList)+7):
         rateList.append([]) #0 Prescale
@@ -91,20 +96,27 @@ def mergeRates(input_dir,output_name,keyWord,AveWrite):
                     if (line[0]!='Path') and (line[0] not in rateList[1]):
                         if (groupCheck ): 
                             rateList[0].append(-1) # Need to be changed to prescales
-                            rateList[1].append(line[0])
-                            rateList[3].append(line[1])
-                            rateList[2].append(line[2])
+                            rateList[1].append(line[0])#ps
+                            if writeGroup and writeDataset:
+                                rateList[3].append(line[1])#group
+                                rateList[2].append(line[2])#dataset
+                            elif writeGroup:
+                                rateList[3].append(line[1])#group
+                                rateList[2].append(" ")#dataset
+                            elif writeDataset:
+                                rateList[3].append(" ")#group
+                                rateList[2].append(line[1])#dataset
                             for ii in range(0,len(datasetList)):
-                                rateList[2*ii+6].append(float(line[3*ii+3]))
-                                rateList[2*ii+7].append(float(line[3*ii+5])**2)
+                                rateList[2*ii+6].append(float(line[3*ii+rate_start]))
+                                rateList[2*ii+7].append(float(line[3*ii+2+rate_start])**2)
                             tmp_count=0.0
                             tmp_error_sq=0.0
                             i += 1
                     elif (line[0]!='Path'):
                         if (groupCheck ):
                             for ii in range(0,len(datasetList)):
-                                rateList[2*ii+6][i] += float(line[3*ii+3])
-                                rateList[2*ii+7][i] += float(line[3*ii+5])**2
+                                rateList[2*ii+6][i] += float(line[3*ii+rate_start])
+                                rateList[2*ii+7][i] += float(line[3*ii+2+rate_start])**2
                             i += 1
                 if (Nlines==0): Nlines = i
     
@@ -161,8 +173,9 @@ def mergeRates(input_dir,output_name,keyWord,AveWrite):
         TotalRateList.append(0)
         TotalErrorList.append(0)
         for i in xrange(0,len(datasetList)):
-                TotalRateList[j] += rateList[2*i+6][j]
-                TotalErrorList[j] += rateList[2*i+7][j]
+            TotalRateList[j] += rateList[2*i+6][j]
+            TotalErrorList[j] += rateList[2*i+7][j]
+            #print i
         TotalRateList[j] += total_ps
         TotalErrorList[j] = math.sqrt(math.fabs(TotalErrorList[j]))
     
@@ -238,7 +251,8 @@ if Method == 1:
             nLS_dic[dataset] = nLS
 print nLS_dic
 #mergeRates("../ResultsBatch/ResultsBatch_Events/","../Results/output.tsv",'matrixEvents_HLTPhysics',True)
-mergeRates("../ResultsBatch/ResultsBatch_Exclusive_Events/","../Results/output.excltrigger.tsv",'matrixEvents_Exclusive_trigger',True)
+mergeRates("../ResultsBatch/ResultsBatch_Events/","../Results/L1_output.tsv",'matrixEvents_HLTPhysics',True,True,False)
+#mergeRates("../ResultsBatch/ResultsBatch_Exclusive_Events/","../Results/output.excltrigger.tsv",'matrixEvents_Exclusive_trigger',True)
 
 
 my_print(datasetList)
