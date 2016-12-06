@@ -144,6 +144,7 @@ for Line in open(file_menu,'r'):
             tmp_group = tmp_group.replace('Muon','MUO')
             tmp_group = tmp_group.replace('muon','MUO')
             tmp_group = tmp_group.replace('tau pog','tau-pog')
+            tmp_group = tmp_group.replace(' ','')
             tmp_group_list = tmp_group.split(',')
             tmp_group_list2 = []
             if not (trigger in triggerGroup):
@@ -154,6 +155,10 @@ for Line in open(file_menu,'r'):
                 if tmp_group_list2 == []:
                     tmp_group_list2 = [' ']
                 triggerGroup[trigger] = tmp_group_list2 
+            else:
+                for group in tmp_group_list:
+                    if not group in triggerGroup[trigger]:
+                        triggerGroup[trigger].append(group)
     
     # make type map
         if column_type >=0:

@@ -5,12 +5,12 @@ sys.path.append("../")
 import os  
 import csv
 import math
+from triggersGroupMap.HLT_Menu_v4p2_v6 import *
 from datasetCrossSections.datasetCrossSectionsHLTPhysics import *
-from triggersGroupMap.Menu_online_v3p1_V4 import *
 
 Method = 1 #0: rate = count ; 1:HLT, rate = psNorm*count / LS*nLS ; 2:Zerobias, rate = 11245Hz * target nBunchs * nCount/total Event
 LS = 23.31
-PsNorm = 107*7.
+PsNorm = 107*4.
 nLS = 246-43+1
 nLS = 0 
 ps_const = 11245.0*2200.0
@@ -156,8 +156,8 @@ def ReadRates(input_dir,keyWord):
         TotalRateList.append(0)
         TotalErrorList.append(0)
         for i in xrange(0,len(datasetList)):
-                TotalRateList[j] += rateList[2*i+3][j]
-                TotalErrorList[j] += rateList[2*i+4][j]
+            TotalRateList[j] += rateList[2*i+3][j]
+            TotalErrorList[j] += rateList[2*i+4][j]
         TotalRateList[j] += total_ps
         TotalErrorList[j] = math.sqrt(math.fabs(TotalErrorList[j]))
     
@@ -177,6 +177,11 @@ def WriteRates(input_dir,output_dir,output_name,keyWord,type_in='',elementlist=[
         text_rate += str(TotalEventsPerDataset[dataset])
         text_rate += "\t\t\t"
     text_rate = text_rate[:-1]+"\n"
+    text_rate += "Total Lumi Section\t\t\t\t"
+    for dataset in datasetList:
+        text_rate += str(nLS_dic[dataset])
+        text_rate += "\t\t\t"
+    text_rate = text_rate[:-1]+"\n"
     h.write(text_rate)
     for j in xrange (0,Nlines):
         text_rate = ""
@@ -188,7 +193,7 @@ def WriteRates(input_dir,output_dir,output_name,keyWord,type_in='',elementlist=[
         text_rate += str(TotalErrorList[j]*rateDataset_total*File_Factor*lumiSF)
         text_rate += "\t"
         for i in xrange(0,len(datasetList)):
-            if rateList[2*i+3][0]==0:
+            if rateList[2*i+3][j]==0:
                 rate = 0
                 error = 0
             else:
@@ -219,6 +224,11 @@ def WriteRates_2(input_dir,output_dir,output_name,keyWord,type_in='',elementlist
     text_rate += "TotalEvents\t\t\t\t"
     for dataset in datasetList:
         text_rate += str(TotalEventsPerDataset[dataset])
+        text_rate += "\t\t\t"
+    text_rate = text_rate[:-1]+"\n"
+    text_rate += "Total Lumi Section\t\t\t\t"
+    for dataset in datasetList:
+        text_rate += str(nLS_dic[dataset])
         text_rate += "\t\t\t"
     text_rate = text_rate[:-1]+"\n"
     h.write(text_rate)
@@ -341,7 +351,7 @@ if Method == 1:
             nLS_dic[dataset] = nLS
 print nLS_dic
 
-WriteRates("../ResultsBatch/ResultsBatch_groupEvents/","../Results/","output.group.tsv",'matrixEvents_groups_HLTPhysic')
+#WriteRates("../ResultsBatch/ResultsBatch_groupEvents/","../Results/","output.group.tsv",'matrixEvents_groups_HLTPhysic')
 #WriteRates("../ResultsBatch/ResultsBatch_Pure_groupEvents/","../Results/","output.puregroup.tsv",'matrixEvents_Pure_groups_')
 #WriteRates("../ResultsBatch/ResultsBatch_primaryDatasetEvents/","../Results/","output.dataset.tsv",'matrixEvents_primaryDataset_HLTPhysic')
 #WriteRates("../ResultsBatch/ResultsBatch_Pure_primaryDatasetEvents/","../Results/","output.puredataset.tsv",'matrixEvents_Pure_primaryDataset_')
@@ -351,6 +361,11 @@ WriteRates("../ResultsBatch/ResultsBatch_groupEvents/","../Results/","output.gro
 #WriteRates_Correlation("../ResultsBatch/ResultsBatch_Core_primaryDatasetEvents/","../Results/","output.matrix_coredataset.tsv",'matrixEvents_Core_primaryDataset_',"dataset",pure_primaryDatasetList,pure_primaryDatasetList,True)
 #WriteRates_Correlation_2("../ResultsBatch/ResultsBatch_Core_TriggerDatasetEvents/","../Results/","output.matrix_coretriggerdataset.tsv",'matrixEvents_Core_TriggerDataset_',"trigger_dataset",triggerList,primaryDatasetList,False)
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ L1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+WriteRates("../ResultsBatch/ResultsBatch_primaryDatasetEvents/","../Results/","L1_output.dataset.tsv",'matrixEvents_primaryDataset_HLTPhysic')
+WriteRates("../ResultsBatch/ResultsBatch_groupEvents/","../Results/","L1_output.group.tsv",'matrixEvents_groups_HLTPhysic')
+WriteRates("../ResultsBatch/ResultsBatch_Pure_groupEvents/","../Results/","L1_output.puregroup.tsv",'matrixEvents_Pure_groups_')
+WriteRates("../ResultsBatch/ResultsBatch_Exclusive_groupEvents/","../Results/","L1_output.exclgroup.tsv",'matrixEvents_Exclusive_groups_')
 
 my_print(datasetList)
 
