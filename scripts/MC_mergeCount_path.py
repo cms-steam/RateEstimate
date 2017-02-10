@@ -5,13 +5,11 @@ sys.path.append("../")
 import os  
 import csv
 import math
-from datasetCrossSections.datasetCrossSections_MC_test import *
-from triggersGroupMap.Menu_online_v3p1_V4 import *
+from triggersGroupMap.HLT_Menu_v4p2_v6 import *
+from datasetCrossSections.datasetCrossSectionsSpring15_updatedFilterEff import *
 
-Method = 11 #0: count, 11: MC rate
-lumi = 1.15E34
-for dataset in datasetList:
-    xsection = xsectionDatasets[dataset]
+Method = 0#11 #0: count, 11: MC rate
+lumi = 1.25E34
 
 
 def my_print(datasetList):
@@ -38,9 +36,7 @@ def getLS(input_dir, keyWord):
     return tmp_dic
 
 
-def mergeRates(input_dir,output_name,keyWord,AveWrite):
-    wdir = input_dir
-    
+def mergeRates(input_dir_list,output_name,keyWord,AveWrite):
     ########## Merging the individual path rates
 #    if L1write:
 #        h1 = open(output_name[:-4]+'_L1.tsv', "w")
@@ -61,47 +57,56 @@ def mergeRates(input_dir,output_name,keyWord,AveWrite):
     Nfiles = 0
     
     ### Looping over the individual .tsv files
-    for rate_file in os.listdir(wdir):
+    tmp_list = []
+    test_n = 0
+    for input_dir in input_dir_list:
+        test_n = 0
+        for tmp_file in os.listdir(input_dir):
+            if not (keyWord in tmp_file) : continue
+            tmp_list.append(os.path.join(input_dir,tmp_file))
+            test_n += 1
+    #        if test_n >200: break
+    test_n = 0
+    for rate_file in tmp_list:
+        test_n += 1
+        print "*****  %d in %d processed  *****"%(test_n, len(tmp_list))
         print rate_file
-        if (keyWord in rate_file) :
-#        if ("pu23to27rates_MC_v4p4_V1__frozen_2015_25ns14e33_v4p4_HLT_V1_2e33_PUfilterGen_matrixEvents.tsv" in rate_file) and not ("group" in rate_file):
-            with open(wdir+rate_file) as tsvfile:
-                print wdir+rate_file
-                tsvreader = csv.reader(tsvfile, delimiter="\t")
-                Nfiles += 1
-                i = 0
-                ### For each .tsv file, looping over the lines of the text file and filling the python list with the summed rates
-                for line in tsvreader: 
-    		    if "TotalEvents" in line[0]:
-       			for k in xrange(0,len(datasetList)): 
-                            print line[k+3]
-                            TotalEventsPerDataset[datasetListFromFile[k]] += float(line[k+3])
-                        print TotalEventsPerDataset
-                        print line
-                        print "*"*30
-                        print len(line)
-                        print "*"*30
-                        continue
-                    groupCheck = True
-                    if (line[0]!='Path') and (line[0] not in rateList[1]):
-                        if (groupCheck ): 
-                            rateList[0].append(-1) # Need to be changed to prescales
-                            rateList[1].append(line[0])
-                            rateList[3].append(line[1])
-                            rateList[2].append(line[2])
-                            for ii in range(0,len(datasetList)):
-                                rateList[2*ii+6].append(float(line[3*ii+3]))
-                                rateList[2*ii+7].append(float(line[3*ii+5])**2)
-                            tmp_count=0.0
-                            tmp_error_sq=0.0
-                            i += 1
-                    elif (line[0]!='Path'):
-                        if (groupCheck ):
-                            for ii in range(0,len(datasetList)):
-                                rateList[2*ii+6][i] += float(line[3*ii+3])
-                                rateList[2*ii+7][i] += float(line[3*ii+5])**2
-                            i += 1
-                if (Nlines==0): Nlines = i
+        with open(rate_file) as tsvfile:
+            tsvreader = csv.reader(tsvfile, delimiter="\t")
+            Nfiles += 1
+            i = 0
+            ### For each .tsv file, looping over the lines of the text file and filling the python list with the summed rates
+            for line in tsvreader: 
+                if "TotalEvents" in line[0]:
+                    for k in xrange(0,len(datasetList)): 
+                        #print line[k+3]
+                        TotalEventsPerDataset[datasetListFromFile[k]] += float(line[k+3])
+                    print TotalEventsPerDataset
+                    print line
+                    print "*"*30
+                    print len(line)
+                    print "*"*30
+                    continue
+                groupCheck = True
+                if (line[0]!='Path') and (line[0] not in rateList[1]):
+                    if (groupCheck ): 
+                        rateList[0].append(-1) # Need to be changed to prescales
+                        rateList[1].append(line[0])
+                        rateList[3].append(line[1])
+                        rateList[2].append(line[2])
+                        for ii in range(0,len(datasetList)):
+                            rateList[2*ii+6].append(float(line[3*ii+3]))
+                            rateList[2*ii+7].append(float(line[3*ii+5])**2)
+                        tmp_count=0.0
+                        tmp_error_sq=0.0
+                        i += 1
+                elif (line[0]!='Path'):
+                    if (groupCheck ):
+                        for ii in range(0,len(datasetList)):
+                            rateList[2*ii+6][i] += float(line[3*ii+3])
+                            rateList[2*ii+7][i] += float(line[3*ii+5])**2
+                        i += 1
+            if (Nlines==0): Nlines = i
     
     print "Nfiles = ",Nfiles
     print "Nlines = ",Nlines
@@ -127,12 +132,16 @@ def mergeRates(input_dir,output_name,keyWord,AveWrite):
    
     if Method==0:
         for dataset in datasetList:
-            rateDataset[dataset]=1
+            rateDataset[dataset]=TotalEventsPerDataset[dataset]
 
     elif Method==11:
+        xsection = {}
         for dataset in datasetList:
-            print "lumi = ",lumi," xsection = ",xsection
-            rateDataset [dataset] = lumi*xsection*1E-24/1E12 # [1b = 1E-24 cm^2, 1b = 1E12pb ]
+            xsection[dataset] = xsectionDatasets[dataset]
+            print "dataset = ",dataset
+            print "lumi = ",lumi," xsection = ",xsection[dataset]
+            rateDataset[dataset] = lumi*xsection[dataset]*1E-24/1E12 # [1b = 1E-24 cm^2, 1b = 1E12pb ]
+            print "rate of dataset : = ",rateDataset[dataset]
     else:
         for dataset in datasetList:
             rateDataset[dataset]=0
@@ -142,8 +151,10 @@ def mergeRates(input_dir,output_name,keyWord,AveWrite):
         TotalRateList.append(0)
         TotalErrorList.append(0)
         for i in xrange(0,len(datasetList)):
-                TotalRateList[j] += rateList[2*i+6][j]*rateDataset[dataset]/TotalEventsPerDataset[dataset]
-                TotalErrorList[j] += rateList[2*i+6][j]*rateDataset[dataset]/TotalEventsPerDataset[dataset]*rateDataset[dataset]/TotalEventsPerDataset[dataset]
+            dataset = datasetListFromFile[i]
+            if TotalEventsPerDataset[dataset] == 0:continue
+            TotalRateList[j] += rateList[2*i+6][j]*rateDataset[dataset]/TotalEventsPerDataset[dataset]
+            TotalErrorList[j] += rateList[2*i+6][j]*rateDataset[dataset]/TotalEventsPerDataset[dataset]*rateDataset[dataset]/TotalEventsPerDataset[dataset]
         TotalErrorList[j] = math.sqrt(math.fabs(TotalErrorList[j]))
     
     ### Filling up the new .tsv file with the content of the python list
@@ -157,12 +168,12 @@ def mergeRates(input_dir,output_name,keyWord,AveWrite):
     text_rate += '\n'
     h.write(text_rate)
 
-#    text_rate += "\tTotalEvents\t\t\t"
-#    for dataset in datasetList:
-#        text_rate += str(TotalEventsPerDataset[dataset])
-#        text_rate += "\t\t\t"
-#    text_rate = text_rate[:-1]+"\n"
-#    h.write(text_rate)
+    text_rate += "\tTotalEvents\t\t\t"
+    for dataset in datasetList:
+        text_rate += str(TotalEventsPerDataset[dataset])
+        text_rate += "\t\t\t"
+    text_rate = text_rate[:-1]+"\n"
+    h.write(text_rate)
     for j in xrange (0,Nlines):
         if rateList[1][j] in prescaleMap:
             rateList[0][j]=prescaleMap[rateList[1][j]][0]
@@ -189,7 +200,7 @@ def mergeRates(input_dir,output_name,keyWord,AveWrite):
             text_rate += str(TotalErrorList[j]*File_Factor*lumiSF/float(tmp_group_len))
             text_rate += "\t"
         for i in xrange(0,len(datasetList)):
-            if rateList[0][j]==0:
+            if rateList[0][j]==0 or TotalEventsPerDataset[datasetListFromFile[i]] == 0:
                 rate = 0.0
                 error = 0.0
             else:
@@ -211,7 +222,8 @@ UnprescaledCount = True
 #start~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 datasetList+=datasetEMEnrichedList
 datasetList+=datasetMuEnrichedList
-mergeRates("../ResultsBatch/ResultsBatch_Events/","../Results/output.tsv",'matrixEvents_',False)
+mergeRates(["../../MC_10B/ResultsBatch/ResultsBatch_Events/","../../MC_10B_2/ResultsBatch/ResultsBatch_Events/","../../MC_10A/ResultsBatch/ResultsBatch_Events/","../../MC_10A_2/ResultsBatch/ResultsBatch_Events/","../../MC_12/ResultsBatch/ResultsBatch_Events/"],"../Results/Count_output.tsv",'matrixEvents_',False)
+#mergeRates(["../../MC_10B/ResultsBatch_v1/ResultsBatch_Events/","../../MC_10A/ResultsBatch_v1/ResultsBatch_Events/"],"../Results/output_v1.tsv",'matrixEvents_',False)
 
 
 my_print(datasetList)

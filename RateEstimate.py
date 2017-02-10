@@ -2,13 +2,13 @@
 # -*- coding: iso-8859-15 -*-
 
 ########## Configuration #####################################################################
-from triggersGroupMap.HLT_Menu_v4p2_v6_L1_v9 import *
-from datasetCrossSections.datasetCrossSectionsHLTPhysics import *
+from triggersGroupMap.HLT_Menu_v4p2_v6_fake import *
+from datasetCrossSections.datasetCrossSectionsSummer16 import *
 
 batchSplit = False
 batchSplit = True
-looping = False
 looping = True
+looping = False
 
 ##### Adding an option to the code #####
 
@@ -23,43 +23,42 @@ if batchSplit:
 
 ##### Other configurations #####
 
-#folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Run2016H/HLTPhysics_2016H_menu4p2/HLTPhysics2016H_DB'
-folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Run2016H/HLTPhysics_2016H_menu4p2/HLTPhysics2016H_prescaled_1p25e34_DB/'
+folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Spring16_FlatPU8to37/HLTRates_v4p2_V2_unPS_MC_2017jan19'
 localdir = '/afs/cern.ch/user/x/xgao/eos/cms'
 lumi = 1              # luminosity [s-1cm-2]
 if (batchSplit): multiprocess = 1           # number of processes
 else: multiprocess = 1 # 8 multiprocessing disbaled for now because of incompatibilities with the way the files are accessed. Need some development.
-pileupMAX = 50
-pileupMIN = 1
-pileupFilter = False        # use pile-up filter?
-pileupFilterGen = False    # use pile-up filter gen or L1?
-useEMEnriched = False       # use plain QCD mu-enriched samples (Pt30to170)?
-useMuEnriched = False       # use plain QCD EM-enriched samples (Pt30to170)?
-evalL1 = True              # evaluate L1 triggers rates?
-evalHLTpaths = False        # evaluate HLT triggers rates?
+pileupMAX = 37
+pileupMIN = 35
+pileupFilter = True        # use pile-up filter?
+pileupFilterGen = True     # use pile-up filter gen or L1?
+useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
+useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
+evalL1 = False              # evaluate L1 triggers rates?
+evalHLTpaths = True        # evaluate HLT triggers rates?
 evalHLTgroups = True       # evaluate HLT triggers groups rates and global HLT and L1 rates
 evalHLTprimaryDatasets = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
 evalHLTprimaryDatasets_core = False # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
 evalHLTTrigger_primaryDatasets_core = False # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
-evalHLTstream = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
+evalHLTstream = False # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
 #evalHLTtwopaths = True    # evaluate the coreelation among the HLT trigger paths rates?
 evalHLTtwogroups = False   # evaluate the coreelation among the HLT trigger groups rates?
-evalPureRate_Group = True
+evalPureRate_Group = False
 evalPureRate_Dataset = False
 evalPureRate_Stream = False
-evalExclusive_Trigger = True
-evalExclusive_group = True
+evalExclusive_Trigger = False
+evalExclusive_group = False
 evalExclusive_dataset = False
 evalExclusive_stream = False
-use_json = True
-json_file_name = '/afs/cern.ch/user/x/xgao/work/RateEstimate_31_08_2016/test_4.2/columns_2016H/columns_1p25e34.txt'
-label = "L1_test"         # name of the output files
+use_json = False
+json_file_name = '/afs/cern.ch/user/x/xgao/work/RateEstimate_16_12_2016/L1_accept/json_columns/PU_45to50_v4.2.2_PS_1.45e34.json'
+label = "MC"         # name of the output files
 runNo = "0"           #if runNo='0', means code will run for all Run.
 LS_min = '0'
 LS_max = '9999'            #default is 9999
 
-isData = True
-## L1Rate studies as a function of PU and number of bunches:
+isData = False
+# L1Rate studies as a function of PU and number of bunches:
 evalL1scaling = False
 
 nLS = 623 ## number of Lumi Sections run over data
@@ -72,7 +71,7 @@ log = 2                     # use log=2
 
 ## filter to be used for QCD EM/Mu enriched
 EM_cut = "(!HLT_BCToEFilter_v1 && HLT_EmFilter_v1)"# && HLT_EmGlobalFilter_v1)"
-Mu_cut = "(MCmu3)"# && HLT_MuFilter_v1)"
+Mu_cut = "(MCmu3 && HLT_MuFilter_v1)"
 
 ## filter to be used for pile-up filter
 PUFilterGen = 'HLT_RemovePileUpDominatedEventsGenV2_v1'
@@ -254,7 +253,10 @@ def getPrescaleListInNtuples():
         onlyFail = False
         walking_folder = folder+"/"+datasetName
         eosDirContent = []
-        lsl(walking_folder,eosDirContent)
+        try:
+            lsl(walking_folder,eosDirContent)
+        except:
+            pass
         for key in eosDirContent:
             if (("failed" in str(key['path'])) or ("log" in str(key['path']))):
                 onlyFail = True
@@ -447,7 +449,10 @@ def CompareGRunVsGoogleDoc(datasetList,triggerList,folder):
         onlyFail = False
         walking_folder = folder+"/"+datasetName
         eosDirContent = []
-        lsl(walking_folder,eosDirContent)
+        try:
+            lsl(walking_folder,eosDirContent)
+        except:
+            pass
         for key in eosDirContent:
             if (("failed" in str(key['path'])) or ("log" in str(key['path']))):
                 onlyFail = True
@@ -592,6 +597,8 @@ def getEvents(input_):
                     passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString1[trigger]+')&&('+filterString+')')
                     if withNegativeWeights: passedEventsMatrix_[trigger] = passedEventsMatrix_[trigger] - 2*tree.Draw("",'(MCWeightSign<0)&&('+getTriggerString1[trigger]+')&&('+filterString+')')
             else:
+                print filterString
+                print denominatorString
                 totalEventsMatrix_ = tree.Draw("",'('+denominatorString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
                 if withNegativeWeights: totalEventsMatrix_= totalEventsMatrix_ - 2*tree.Draw("",'(MCWeightSign<0)&&('+denominatorString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
                 for trigger in triggerAndGroupList:
@@ -813,7 +820,11 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatri
     noRootFile = True
     walking_folder = folder+"/"+dataset
     eosDirContent=[]
-    lsl(walking_folder,eosDirContent)
+    try:
+        lsl(walking_folder,eosDirContent)
+    except:
+        pass
+
     for key in eosDirContent:
         if (("failed" in str(key['path'])) or ("log" in str(key['file'])) or ("161108_170325" in str(key['path']))): continue
         if (".root" in str(key['file'])):
