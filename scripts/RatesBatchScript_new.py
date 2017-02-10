@@ -10,7 +10,7 @@ from datasetCrossSections.datasetCrossSectionsSummer16 import *
 
 
 MYDIR=os.getcwd()
-folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Spring16_FlatPU8to37/HLTRates_v4p2_V2_unPS_MC_lowPU_2017jan24'
+folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Spring16_FlatPU8to37/HLTRates_v4p2_V2_unPS_MC_2017jan19'
 
 def runCommand(commandLine):
     #sys.stdout.write("%s\n" % commandLine)
@@ -122,25 +122,39 @@ def subpu(minPU,maxPU,datasetList,numdic,my_sum):
         print "err!"
         pass
     j=1
+    loop_mark = 10
+    tmp_text = ''
     for dataset in datasetList:
+        k = 0
+        pre_k = 0
         for i in range(1,numdic[dataset]+1):
             print 'PU~[%s,%s]: %s : %d/%d '%(str(minPU),str(maxPU),dataset,i,numdic[dataset])
             print 'total: %d/%d  ;  %.1f %% processed '%(j,my_sum,(100*float(j)/float(my_sum)))
-        
-            try:
-                tmp_jobname="submit_%s_%s.jobb"%(dataset,str(i))
-                tmp_job=open(MYDIR+'/'+tmp_dir+'/sub_job/'+tmp_jobname,'w')
-                tmp_job.write("curr_dir=%s\n"%(MYDIR))
-                tmp_job.write("cd %s\n"%(MYDIR))
-                tmp_job.write("source env.sh\n")
-                tmp_job.write("cd ../\n")
-                tmp_job.write("python RateEstimate.py -n %s -d %s\n"%(str(i),dataset))
-                tmp_job.write("\n")
-                tmp_job.close()
-                os.system("chmod +x %s"%(MYDIR+'/'+tmp_dir+'/sub_job/'+tmp_jobname))
-                os.system("bsub -q 1nh -eo %s/sub_err/err_%s_%s.dat -oo %s/sub_out/out_%s_%s.dat %s"%(tmp_dir,dataset,str(i),tmp_dir,dataset,str(i),MYDIR+'/'+tmp_dir+'/sub_job/'+tmp_jobname))
-            except:
-                pass
+
+            tmp_jobname="submit_%s_%s.jobb"%(dataset,str(i))
+            tmp_job=open(MYDIR+'/'+tmp_dir+'/sub_job/'+tmp_jobname,'w')
+            tmp_job.write("curr_dir=%s\n"%(MYDIR))
+            tmp_job.write("cd %s\n"%(MYDIR))
+            tmp_job.write("source env.sh\n")
+            tmp_job.write("cd ../\n")
+            tmp_job.write("python RateEstimate.py -n %s -d %s\n"%(str(i),dataset))
+            tmp_job.write("\n")
+            tmp_job.close()
+            tmp_job_dir = MYDIR+'/'+tmp_dir+'/sub_job/'+tmp_jobname
+            os.system("chmod +x %s"%(tmp_job_dir))
+            #os.system("bsub -q 1nh -eo %s/sub_err/err_%s_%s.dat -oo %s/sub_out/out_%s_%s.dat %s"%(tmp_dir,dataset,str(i),tmp_dir,dataset,str(i),MYDIR+'/'+tmp_dir+'/sub_job/'+tmp_jobname))
+
+            k+=1
+            tmp_text = tmp_text + tmp_job_dir + "\n"
+            if k % loop_mark == 0 or i == numdic[dataset]:
+                Tjobsname = "sub_%s_%s_%s.jobb"%(dataset, pre_k, k)
+                Tjob_dir = MYDIR+'/'+tmp_dir+'/sub_job2/'+Tjobsname
+                Tjob = open(Tjob_dir,"w")
+                Tjob.write("%s"%(tmp_text))
+                os.system("chmod +x %s"%(Tjob_dir))
+                os.system("bsub -q 1nh -eo %s/sub_err/err_%s_%s.dat -oo %s/sub_out/out_%s_%s.dat %s"%(tmp_dir,dataset,k,tmp_dir,dataset,k,Tjob_dir))
+                pre_k = k
+                tmp_text = ''
             j+=1
 
 
