@@ -5,7 +5,6 @@ import shlex
 import subprocess
 import sys
 sys.path.append("../")
-from triggersGroupMap.HLT_Menu_v4p2_v6_fake import *
 from datasetCrossSections.datasetCrossSectionsSummer16 import *
 from input_card import *
 
@@ -21,27 +20,15 @@ def runCommand(commandLine):
 
 def lsl(file_or_path,my_filelist):
     executable_eos = '/afs/cern.ch/project/eos/installation/cms/bin/eos.select'
-    '''
-    List EOS file/directory content, returning the information found in 'eos ls -l'.
-    The output is a list of dictionaries with the following entries:
-        permissions
-        file
-        modified
-        size (in bytes)
-    An exception of type IOError will be raised in case file/directory does not exist.
-    '''
 
     directory = os.path.dirname(file_or_path)
     ls_command = runCommand('%s ls -l %s' % (executable_eos, file_or_path))
 
     stdout, stderr = ls_command.communicate()
-    #print "stdout = ", stdout
     status = ls_command.returncode
-    #print "status = ", status
     if status != 0:
         raise IOError("File/path = %s does not exist !!" % file_or_path)
 
-    retVal = []
     for line in stdout.splitlines():
         fields = line.split()
         if len(fields) < 8:
@@ -52,9 +39,6 @@ def lsl(file_or_path,my_filelist):
             'file' : fields[8]
         }
         time_stamp = " ".join(fields[5:8])
-        # CV: value of field[7] may be in format "hour:minute" or "year".
-        #     if number contains ":" it means that value specifies hour and minute when file/directory was created
-        #      and file/directory was created this year.
         if time_stamp.find(':') != -1:
             file_info['time'] = time.strptime(
                 time_stamp + " " + str(datetime.datetime.now().year),
@@ -62,8 +46,6 @@ def lsl(file_or_path,my_filelist):
         else:
             file_info['time'] = time.strptime(time_stamp, "%b %d %Y")
         file_info['path'] = file_or_path
-        #print "file_info = " % file_info
-        retVal.append(file_info)
         my_filelist.append(file_info)
         tmp_path=file_info['path']+'/'+file_info['file']
         if not '.' in tmp_path[-5:]:
@@ -77,22 +59,56 @@ def lsl(file_or_path,my_filelist):
     return
 
 
+def check_lsl(path, dataset):
+    executable_eos = '/afs/cern.ch/project/eos/installation/cms/bin/eos.select'
+    '''
+    List EOS file/directory content, returning the information found in 'eos ls -l'.
+    The output is a list of dictionaries with the following entries:
+        permissions
+        file
+        modified
+        size (in bytes)
+    An exception of type IOError will be raised in case file/directory does not exist.
+    '''
+
+    directory = os.path.dirname(path)
+    ls_command = runCommand('%s ls -l %s' % (executable_eos, path))
+
+    stdout, stderr = ls_command.communicate()
+    #print "stdout = ", stdout
+    status = ls_command.returncode
+    #print "status = ", status
+    if status != 0:
+        raise IOError("File/path = %s does not exist !!" % path)
+
+    for line in stdout.splitlines():
+        fields = line.split()
+        if len(fields) < 8:
+            continue
+        file_info = {
+            'permissions' : fields[0],
+            'size' : int(fields[4]),
+            'file' : fields[8]
+        }
+        if dataset in file_info['file']:return True
+    return False
+
+
 
 def getdatasetfilenum(dataset):
     filenames=[]
     noRootFile = True
-    walking_folder = folder+"/"+dataset
-    eosDirContent=[]
-    try:
-        lsl(walking_folder,eosDirContent)
-    except:
-        pass
-    for key in eosDirContent:
-        if (("failed" in str(key['path'])) or ("log" in str(key['file']))): continue
-        if (".root" in str(key['file'])):
-            filenames.append(str(key['path'])+'/'+str(key['file']))
-            noRootFile = False
-#    print filenames
+    for folder in folder_list:
+        if check_lsl(folder, dataset):
+            eosDirContent=[]
+            walking_folder = folder+"/"+dataset
+            lsl(walking_folder,eosDirContent)
+            for key in eosDirContent:
+                if (("failed" in str(key['path'])) or ("log" in str(key['file']))): continue
+                if (".root" in str(key['file'])):
+                    filenames.append(str(key['path'])+'/'+str(key['file']))
+                    noRootFile = False
+            #break
     return filenames
 
 
@@ -156,7 +172,7 @@ def subpu(minPU,maxPU,datasetList,filedic,my_sum):
                 Tjob = open(Tjob_dir,"w")
                 Tjob.write("%s"%(tmp_text))
                 os.system("chmod +x %s"%(Tjob_dir))
-                sub_str = "bsub -q 1nh -eo %s/sub_err/err_%s_%s.dat -oo %s/sub_out/out_%s_%s.dat %s"%(tmp_dir,dataset,k,tmp_dir,dataset,k,Tjob_dir)
+                sub_str = "bsub -q 8nh -eo %s/sub_err/err_%s_%s.dat -oo %s/sub_out/out_%s_%s.dat %s"%(tmp_dir,dataset,k,tmp_dir,dataset,k,Tjob_dir)
                 local_str = "%s"%(Tjob_dir)
                 #os.system(sub_str)
                 sub_total.write("%s\n"%(sub_str))
@@ -172,4 +188,5 @@ datasetList+=datasetEMEnrichedList
 datasetList+=datasetMuEnrichedList
 
 filedic,my_sum=getsubdic(datasetList)
+#print my_sum
 subpu(0,100,datasetList,filedic,my_sum)
