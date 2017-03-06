@@ -9,7 +9,7 @@ from triggersGroupMap.HLT_Menu_v4p2_v6 import *
 from datasetCrossSections.datasetCrossSectionsSummer16 import *
 
 Method = 11#11 #0: count, 11: MC rate
-lumi = 1.103E34
+lumi = 1.17E34
 
 
 def my_print(datasetList):
@@ -164,7 +164,7 @@ def mergeRates(input_dir_list,output_name,keyWord,AveWrite):
     else:
         text_rate = 'Prescale\tPath\tDataset\tGroup\t\tTotal\t\t\t'
     for i in range(len(datasetList)):
-        text_rate+=datasetList[i].split('_TuneCUETP8M1_13TeV_pythia8')[0]+'\t\t\t'
+        text_rate+=datasetList[i].split('_TuneCUETP8M1_13TeV')[0]+'\t\t\t'
     text_rate += '\n'
     h.write(text_rate)
 
@@ -180,6 +180,7 @@ def mergeRates(input_dir_list,output_name,keyWord,AveWrite):
             rateList[0][j]=prescaleMap[rateList[1][j]][0]
     for j in xrange (0,Nlines):
         tmp_ps = float(ps_dic[rateList[1][j]])
+        tmp_ps = 1.0
         if tmp_ps < 1: tmp_ps = 1.0
         print "%s   :   %f"%(rateList[1][j],tmp_ps)
         text_rate = ""

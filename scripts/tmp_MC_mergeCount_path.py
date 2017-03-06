@@ -185,7 +185,7 @@ UnprescaledCount = True
 #start~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 datasetList+=datasetEMEnrichedList
 datasetList+=datasetMuEnrichedList
-mergeRates(["../../jan19/ResultsBatch/ResultsBatch_Events/","../../jan20/ResultsBatch/ResultsBatch_Events/","../../jan21B/ResultsBatch/ResultsBatch_Events/","../../jan21C/ResultsBatch/ResultsBatch_Events/","../../jan21D/ResultsBatch/ResultsBatch_Events/","../../jan21E/ResultsBatch/ResultsBatch_Events/"],"../Results/tmp_count.tsv",'matrixEvents_',False)
+mergeRates(["../../feb09/ResultsBatch/ResultsBatch_Events/","../../feb09B/ResultsBatch/ResultsBatch_Events/","../../feb09C/ResultsBatch/ResultsBatch_Events/","../../feb09D/ResultsBatch/ResultsBatch_Events/","../../feb09F/ResultsBatch/ResultsBatch_Events/","../../feb09G/ResultsBatch/ResultsBatch_Events/","../../feb09H/ResultsBatch/ResultsBatch_Events/","../../feb09I/ResultsBatch/ResultsBatch_Events/","../../feb09J/ResultsBatch/ResultsBatch_Events/",],"../Results/tmp_count.tsv",'matrixEvents_',False)
 #mergeRates(["../../MC_10B/ResultsBatch_v1/ResultsBatch_Events/","../../MC_10A/ResultsBatch_v1/ResultsBatch_Events/"],"../Results/output_v1.tsv",'matrixEvents_',False)
 
 

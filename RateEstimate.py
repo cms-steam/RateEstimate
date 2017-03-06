@@ -4,6 +4,7 @@
 ########## Configuration #####################################################################
 from triggersGroupMap.HLT_Menu_v4p2_v6_fake import *
 from datasetCrossSections.datasetCrossSectionsSummer16 import *
+from scripts.input_card import *
 
 batchSplit = False
 batchSplit = True
@@ -18,18 +19,19 @@ if batchSplit:
 
     parser.add_option("-n","--number",dest="fileNumber",default="0",type="int") # python file.py -n N => options.fileNumber is N
     parser.add_option("-d","--dataset",dest="datasetName",default="",type="str")
+    parser.add_option("-f","--name",dest="fileName",default="null",type="str")
 
     (options,args)=parser.parse_args()
 
 ##### Other configurations #####
 
-folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Spring16_FlatPU8to37/HLTRates_v4p2_V2_unPS_MC_2017jan19'
+#folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Summer16_FlatPU28to62/HLTRates_v4p2_V2_1p25e34_MC_2017feb09J'
 localdir = '/afs/cern.ch/user/x/xgao/eos/cms'
 lumi = 1              # luminosity [s-1cm-2]
 if (batchSplit): multiprocess = 1           # number of processes
 else: multiprocess = 1 # 8 multiprocessing disbaled for now because of incompatibilities with the way the files are accessed. Need some development.
-pileupMAX = 37
-pileupMIN = 35
+pileupMIN = 54
+pileupMAX = 56
 pileupFilter = True        # use pile-up filter?
 pileupFilterGen = True     # use pile-up filter gen or L1?
 useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
@@ -71,7 +73,7 @@ log = 2                     # use log=2
 
 ## filter to be used for QCD EM/Mu enriched
 EM_cut = "(!HLT_BCToEFilter_v1 && HLT_EmFilter_v1)"# && HLT_EmGlobalFilter_v1)"
-Mu_cut = "(MCmu3 && HLT_MuFilter_v1)"
+Mu_cut = "(HLT_MuFilter_v1)"#"(MCmu3 && HLT_MuFilter_v1)"
 
 ## filter to be used for pile-up filter
 PUFilterGen = 'HLT_RemovePileUpDominatedEventsGenV2_v1'
@@ -247,34 +249,38 @@ def getPrescaleListInNtuples():
   # take the first "hltbit" file                                                                                                   
     dirpath = ''                                                                                                                   
     filenames = []                                                                                                                 
-    for dataset in datasetList:
-        datasetName = dataset
-        noRootFile = True
-        onlyFail = False
-        walking_folder = folder+"/"+datasetName
-        eosDirContent = []
-        try:
-            lsl(walking_folder,eosDirContent)
-        except:
-            pass
-        for key in eosDirContent:
-            if (("failed" in str(key['path'])) or ("log" in str(key['path']))):
-                onlyFail = True
-                continue
-            elif ("root" in str(key['file'])):
-                filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
-                dirpath = "root://eoscms//eos/cms/"+walking_folder
-                noRootFile = False
-                onlyFail = False
-                break
-        if len(filenames)>0: break
+    local_run = True
+    if not local_run:
+        for dataset in datasetList:
+            datasetName = dataset
+            noRootFile = True
+            onlyFail = False
+            walking_folder = folder+"/"+datasetName
+            eosDirContent = []
+            try:
+                lsl(walking_folder,eosDirContent)
+            except:
+                pass
+            for key in eosDirContent:
+                if (("failed" in str(key['path'])) or ("log" in str(key['path']))):
+                    onlyFail = True
+                    continue
+                elif ("root" in str(key['file'])):
+                    filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
+                    dirpath = "root://eoscms//eos/cms/"+walking_folder
+                    noRootFile = False
+                    onlyFail = False
+                    break
+            if len(filenames)>0: break
  
-    if len(filenames)==0:                                                                                                          
-        raise ValueError('No good file found in '+folder)                                                                          
+        if len(filenames)==0:                                                                                                          
+            raise ValueError('No good file found in '+folder)                                                                          
                                                                                                                                    
-    for filename in filenames:                                                                                                     
-        if 'hltbit' in filename: break                                                                                             
+        for filename in filenames:                                                                                                     
+            if 'hltbit' in filename: break                                                                                             
                                                                                                                                    
+    else:
+        filename = "root://eoscms//eos/cms/"+options.fileName
     _file0 = ROOT.TFile.Open(filename)                                                                                 
     chain = ROOT.gDirectory.Get("HltTree")                                                                                         
                                                                                                                                    
@@ -440,36 +446,40 @@ def writeL1RateStudies(fileName,prescaleList,datasetList,rateTriggerDataset,rate
 ## compare the trigger list from the ntuple and from triggersGroupMap*.py and print the difference
 def CompareGRunVsGoogleDoc(datasetList,triggerList,folder):
     # take the first "hltbit" file
+    local_run = True
     dirpath = ''
     filenames = []
  
-    for dataset in datasetList:
-        datasetName = dataset
-        noRootFile = True
-        onlyFail = False
-        walking_folder = folder+"/"+datasetName
-        eosDirContent = []
-        try:
-            lsl(walking_folder,eosDirContent)
-        except:
-            pass
-        for key in eosDirContent:
-            if (("failed" in str(key['path'])) or ("log" in str(key['path']))):
-                onlyFail = True
-                continue
-            elif ("root" in str(key['file'])):
-                filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
-                dirpath = "root://eoscms//eos/cms/"+walking_folder
-                noRootFile = False
-                onlyFail = False
-                break
-        if len(filenames)>0: break 
-    if len(filenames)==0:
-        raise ValueError('No good file found in '+folder)
-    
-    for filename in filenames:
-        if 'hltbit' in filename: break
-    
+    if not local_run:
+        for dataset in datasetList:
+            datasetName = dataset
+            noRootFile = True
+            onlyFail = False
+            walking_folder = folder+"/"+datasetName
+            eosDirContent = []
+            try:
+                lsl(walking_folder,eosDirContent)
+            except:
+                pass
+            for key in eosDirContent:
+                if (("failed" in str(key['path'])) or ("log" in str(key['path']))):
+                    onlyFail = True
+                    continue
+                elif ("root" in str(key['file'])):
+                    filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
+                    dirpath = "root://eoscms//eos/cms/"+walking_folder
+                    noRootFile = False
+                    onlyFail = False
+                    break
+            if len(filenames)>0: break 
+        if len(filenames)==0:
+            raise ValueError('No good file found in '+folder)
+        
+        for filename in filenames:
+            if 'hltbit' in filename: break
+   
+    else: 
+        filename = "root://eoscms//eos/cms/"+options.fileName
     _file0 = ROOT.TFile.Open(filename)
     chain = ROOT.gDirectory.Get("HltTree")
     
@@ -820,25 +830,32 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatri
     noRootFile = True
     walking_folder = folder+"/"+dataset
     eosDirContent=[]
-    try:
-        lsl(walking_folder,eosDirContent)
-    except:
-        pass
+    if options.fileName == "null":
+        try:
+            lsl(walking_folder,eosDirContent)
+        except:
+            pass
 
-    for key in eosDirContent:
-        if (("failed" in str(key['path'])) or ("log" in str(key['file'])) or ("161108_170325" in str(key['path']))): continue
-        if (".root" in str(key['file'])):
-            if batchSplit:
-                filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
-                dirpath = "root://eoscms//eos/cms"+walking_folder
-            else:
-                filenames.append(localdir+str(key['path'])+'/'+str(key['file']))
-                dirpath = localdir+walking_folder
-            noRootFile = False
+        for key in eosDirContent:
+            if (("failed" in str(key['path'])) or ("log" in str(key['file'])) or ("161108_170325" in str(key['path']))): continue
+            if (".root" in str(key['file'])):
+                if batchSplit:
+                    filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
+                    dirpath = "root://eoscms//eos/cms"+walking_folder
+                else:
+                    filenames.append(localdir+str(key['path'])+'/'+str(key['file']))
+                    dirpath = localdir+walking_folder
+                noRootFile = False
+    else:
+        filenames.append("root://eoscms//eos/cms"+options.fileName)
+        dirpath = "root://eoscms//eos/cms"+walking_folder
+        print options.fileName
+        print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+        noRootFile = False
 
     ## print an error if a dataset is missing
     if batchSplit:
-        if (dirpath=='' or (len(filenames)<options.fileNumber)):
+        if (dirpath=='' or (len(filenames)<options.fileNumber)) and (options.fileName=="null"):
             print
             print '#'*80
             print '#'*10,"dataset=",dataset," not found!"
@@ -930,10 +947,15 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatri
         inputs = []
         i = 1
         for filename in filenames:
+            print "number of filenames :",len(filenames)
             fileTest = ROOT.TFile.Open(filename)
             if fileTest:
                 if(batchSplit):
-                    if(i==options.fileNumber):
+                    if(options.fileName != "null"):
+                        print "file ",options.fileNumber," (",filename,") added to inputs -f"
+                        inputs.append((filename,filterString,denominatorString,withNegativeWeights,dataset))
+                        break
+                    elif(i==options.fileNumber):
                         print "file ",i," (",filename,") added to inputs"
                         inputs.append((filename,filterString,denominatorString,withNegativeWeights,dataset))
                         break
@@ -1207,14 +1229,6 @@ if batchSplit:
 
     if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
 
-
-#    ### write files with  trigger rates
-#    if evalL1:writeMatrixRates(filename+'_L1_matrixRates_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,L1List,True,False)
-#    if evalHLTpaths: writeMatrixRates(directoryname+filename+'_matrixRates_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,HLTList,True,True)
-#    if evalHLTprimaryDatasets: writeMatrixRates(directoryname+filename+'_matrixRates.primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,primaryDatasetList)
-#    if evalHLTstream: writeMatrixRates(directoryname+filename+'_matrixRates.stream_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,streamList)
-#    if evalHLTgroups: writeMatrixRates(directoryname+filename+'_matrixRates.groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,groupList)
-#    if evalHLTtwogroups: writeMatrixRates(filename+'_matrixRates.twogroups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',prescaleList,datasetList,rateTriggerDataset,rateTriggerTotal,twoGroupsList)
 
 #else:
 #    try:
