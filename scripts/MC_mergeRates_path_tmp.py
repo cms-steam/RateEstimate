@@ -9,8 +9,9 @@ from triggersGroupMap.HLT_Menu_v4p2_v6 import *
 from datasetCrossSections.datasetCrossSectionsSummer16 import *
 
 Method = 11#11 #0: count, 11: MC rate
-lumi = 1.103E34
+lumi = 1.17E34
 
+ROOT.gROOT.SetBatch(ROOT.kTRUE)
 
 def my_print(datasetList):
     for dataset in datasetList:
@@ -178,8 +179,11 @@ def mergeRates(input_dir_list,output_name,keyWord,AveWrite):
     for j in xrange (0,Nlines):
         if rateList[1][j] in prescaleMap:
             rateList[0][j]=prescaleMap[rateList[1][j]][0]
+    rate_dic = {}
     for j in xrange (0,Nlines):
-        tmp_ps = float(ps_dic[rateList[1][j]])
+        tmp_rate_list = []
+#        tmp_ps = float(ps_dic[rateList[1][j]])
+        tmp_ps = 1.0
         if tmp_ps < 1: tmp_ps = 1.0
         print "%s   :   %f"%(rateList[1][j],tmp_ps)
         text_rate = ""
@@ -192,10 +196,13 @@ def mergeRates(input_dir_list,output_name,keyWord,AveWrite):
         text_rate += str(rateList[3][j])
         text_rate += "\t"
 
-        text_rate += str(TotalRateList[j]*File_Factor*lumiSF/tmp_ps)
+        rate = (TotalRateList[j]*File_Factor*lumiSF/tmp_ps)
+        error = (TotalErrorList[j]*File_Factor*lumiSF/tmp_ps)
+        text_rate += str(rate)
         text_rate += "\t+/-\t"
-        text_rate += str(TotalErrorList[j]*File_Factor*lumiSF/tmp_ps)
+        text_rate += str(error)
         text_rate += "\t"
+        tmp_rate_list.append(rate)
         if AveWrite:
             tmp_group_len = len(rateList[3][j].split(','))
             if tmp_group_len <1: tmp_group_len = 1
@@ -214,10 +221,53 @@ def mergeRates(input_dir_list,output_name,keyWord,AveWrite):
             text_rate += "\t+/-\t"
             text_rate += str(error)
             text_rate += "\t"
+            tmp_rate_list.append(rate)
     
         text_rate = text_rate[:-1]+"\n"
         h.write(text_rate)
+        rate_dic[rateList[1][j]]=tmp_rate_list
     h.close()
+    return rate_dic 
+
+def plot_rate(rate_dic):
+    import ROOT
+    try:
+        os.mkdir("../Results/png")
+    except:
+        pass
+    c1 = ROOT.TCanvas("c1","rate contribution",10,10,800,600)
+    c1.SetLeftMargin(0.30)
+    c1.SetGrid()
+    for rate in rate_dic:
+        plot_rate_part(rate,rate_dic[rate],c1)
+
+def plot_rate_part(path,rate_list,c1):
+    import ROOT
+    import time
+    label_list = ["total"]
+    for dataset in datasetList:
+        label_list.append(dataset.split("_TuneCUETP8M1")[0])
+    h1 = ROOT.TH1F("h1",path,len(label_list),0,len(label_list))
+    h1.SetStats(0)
+    h1.SetFillColor(45)
+    if rate_list[0]>0:
+        h1.SetMaximum(1.5*(rate_list[0]))
+    else:
+        h1.SetMaximum(1.0)
+    h1.SetMinimum(-0.0001)
+    j = 1
+    for i in range(len(label_list),0,-1):
+        h1.GetXaxis().SetBinLabel(j,label_list[i-1])
+        h1.Fill(label_list[i-1],rate_list[i-1])
+        j += 1 
+    #h1.Draw("HIST TEXT0")
+    h1.Draw("hbar2")
+    c1.Update()
+    c1.Print("../Results/png/%s.png"%(path))
+    return
+        
+
+
 
 def getPS(steamFile, column_path, column_HLT, column_L1):
     ps_dic = {}
@@ -243,9 +293,10 @@ UnprescaledCount = True
 #start~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 datasetList+=datasetEMEnrichedList
 datasetList+=datasetMuEnrichedList
-ps_dic = getPS("../triggersGroupMap/HLT_Menu_v4.2_v6.tsv", 2, 10, 30)
+#ps_dic = getPS("../triggersGroupMap/HLT_Menu_v4.2_v6.tsv", 2, 10, 30)
 #mergeRates(["../../jan24/ResultsBatch/ResultsBatch_Events/","../../jan24C/ResultsBatch/ResultsBatch_Events/","../../jan24D/ResultsBatch/ResultsBatch_Events/","../../jan24E/ResultsBatch/ResultsBatch_Events/","../../jan24F/ResultsBatch/ResultsBatch_Events/"],"../Results/output.tsv",'matrixEvents_',False)
-mergeRates(["../Results"],"../Results/output.tsv",'tmp_',False)
+rate_dic = mergeRates(["../Results"],"../Results/output.tsv",'tmp_',False)
+plot_rate(rate_dic)
 
 
 my_print(datasetList)
