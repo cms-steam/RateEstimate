@@ -38,11 +38,11 @@ useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
 useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
 evalL1 = False              # evaluate L1 triggers rates?
 evalHLTpaths = True        # evaluate HLT triggers rates?
-evalHLTgroups = True       # evaluate HLT triggers groups rates and global HLT and L1 rates
-evalHLTprimaryDatasets = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
+eval_groups = True       # evaluate HLT triggers groups rates and global HLT and L1 rates
+eval_primaryDatasets = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
 evalHLTprimaryDatasets_core = False # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
 evalHLTTrigger_primaryDatasets_core = False # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
-evalHLTstream = False # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
+eval_stream = False # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
 #evalHLTtwopaths = True    # evaluate the coreelation among the HLT trigger paths rates?
 evalHLTtwogroups = False   # evaluate the coreelation among the HLT trigger groups rates?
 evalPureRate_Group = False
@@ -775,7 +775,7 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatri
                             dirpath = localdir+walking_folder
     else:
         filenames.append("root://eoscms//eos/cms"+options.fileName)
-        dirpath = "root://eoscms//eos/cms"+walking_folder
+        dirpath = "root://eoscms//eos/cms"+options.fileName
         print options.fileName
         print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 
@@ -827,7 +827,7 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatri
     if (not useEMEnriched) and isEMEnriched: skip = True
     
     ## apply PU filter
-    if pileupFilter and ('QCD'in dirpath):
+    if pileupFilter and ('QCD'in dataset):
         if pileupFilterGen: filterString += '&&'+PUFilterGen
         else: filterString += '&&'+PUFilterL1
     
@@ -990,7 +990,7 @@ print "Use QCDMuEnriched? ", useMuEnriched
 print "Evaluate L1 triggers rates? ", evalL1
 print "Evaluate HLT triggers rates? ", evalHLTpaths
 #print "Evaluate HLT triggers shared rates? ", evalHLTtwopaths
-print "Evaluate HLT groups rates? ", evalHLTgroups
+print "Evaluate HLT groups rates? ", eval_groups
 print "Evaluate HLT groups shared rates? ", evalHLTtwogroups
 print "Pile-up filter: ",pileupFilter
 if pileupFilter:
@@ -1019,11 +1019,11 @@ if evalL1:
     L1List = CompareGRunVsGoogleDoc(datasetList,L1List,folder)
     triggerAndGroupList=triggerAndGroupList+L1List
 
-if evalHLTprimaryDatasets: 
+if eval_primaryDatasets: 
     triggerAndGroupList=triggerAndGroupList+primaryDatasetList
-if evalHLTstream: 
+if eval_stream: 
     triggerAndGroupList=triggerAndGroupList+streamList
-if evalHLTgroups:       
+if eval_groups:       
     triggerAndGroupList=triggerAndGroupList+groupList
 #if evalHLTtwopaths:     triggerAndGroupList=triggerAndGroupList+twoHLTsList
 if evalHLTtwogroups:    
@@ -1140,9 +1140,9 @@ if batchSplit:
     if evalL1: writeMatrixEvents(directoryname+'ResultsBatch_Events/'+filename+'_L1_matrixEvents_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,L1List,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,True,True)
     if evalHLTpaths: writeMatrixEvents(directoryname+'ResultsBatch_Events/'+filename+'_matrixEvents_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,HLTList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,True,True)
 
-    if evalHLTprimaryDatasets: writeMatrixEvents(directoryname+'ResultsBatch_primaryDatasetEvents/'+filename+'_matrixEvents_primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,primaryDatasetList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
-    if evalHLTgroups: writeMatrixEvents(directoryname+'ResultsBatch_groupEvents/'+filename+'_matrixEvents_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
-    if evalHLTstream: writeMatrixEvents(directoryname+'ResultsBatch_streamEvents/'+filename+'_matrixEvents_stream_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,streamList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
+    if eval_primaryDatasets: writeMatrixEvents(directoryname+'ResultsBatch_primaryDatasetEvents/'+filename+'_matrixEvents_primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,primaryDatasetList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
+    if eval_groups: writeMatrixEvents(directoryname+'ResultsBatch_groupEvents/'+filename+'_matrixEvents_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
+    if eval_stream: writeMatrixEvents(directoryname+'ResultsBatch_streamEvents/'+filename+'_matrixEvents_stream_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,streamList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
 
     if evalPureRate_Group: writeMatrixEvents(directoryname+'ResultsBatch_Pure_groupEvents/'+filename+'_matrixEvents_Pure_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure)
     if evalPureRate_Dataset: writeMatrixEvents(directoryname+'ResultsBatch_Pure_primaryDatasetEvents/'+filename+'_matrixEvents_Pure_primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,pure_primaryDatasetList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure)

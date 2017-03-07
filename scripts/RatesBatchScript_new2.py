@@ -172,7 +172,7 @@ def subpu(minPU,maxPU,datasetList,filedic,my_sum):
                 Tjob = open(Tjob_dir,"w")
                 Tjob.write("%s"%(tmp_text))
                 os.system("chmod +x %s"%(Tjob_dir))
-                sub_str = "bsub -q 8nh -eo %s/sub_err/err_%s_%s.dat -oo %s/sub_out/out_%s_%s.dat %s"%(tmp_dir,dataset,k,tmp_dir,dataset,k,Tjob_dir)
+                sub_str = "bsub -q 1nh -eo %s/sub_err/err_%s_%s.dat -oo %s/sub_out/out_%s_%s.dat %s"%(tmp_dir,dataset,k,tmp_dir,dataset,k,Tjob_dir)
                 local_str = "%s"%(Tjob_dir)
                 #os.system(sub_str)
                 sub_total.write("%s\n"%(sub_str))
