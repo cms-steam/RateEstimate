@@ -2,8 +2,8 @@
 # -*- coding: iso-8859-15 -*-
 
 ########## Configuration #####################################################################
-from triggersGroupMap.HLT_Menu_v4p2_v6_fake import *
-from datasetCrossSections.datasetCrossSectionsSummer16 import *
+from triggersGroupMap.HLT_Menu_v4p2_v6 import *
+from datasetCrossSections.datasetCrossSectionsSummer16_nu import *
 from scripts.input_card import *
 
 batchSplit = False
@@ -30,12 +30,12 @@ localdir = '/afs/cern.ch/user/x/xgao/eos/cms'
 lumi = 1              # luminosity [s-1cm-2]
 if (batchSplit): multiprocess = 1           # number of processes
 else: multiprocess = 1 # 8 multiprocessing disbaled for now because of incompatibilities with the way the files are accessed. Need some development.
-pileupMIN = 36
-pileupMAX = 40
+pileupMIN = 0
+pileupMAX = 0
 pileupFilter = True        # use pile-up filter?
 pileupFilterGen = True     # use pile-up filter gen or L1?
-useEMEnriched = True       # use plain QCD mu-enriched samples (Pt30to170)?
-useMuEnriched = True       # use plain QCD EM-enriched samples (Pt30to170)?
+useEMEnriched = False       # use plain QCD mu-enriched samples (Pt30to170)?
+useMuEnriched = False       # use plain QCD EM-enriched samples (Pt30to170)?
 evalL1 = False              # evaluate L1 triggers rates?
 evalHLTpaths = True        # evaluate HLT triggers rates?
 eval_groups = True       # evaluate HLT triggers groups rates and global HLT and L1 rates
@@ -364,7 +364,7 @@ def writeMatrixEvents(fileName,datasetList,triggerList,totalEventsMatrix,passedE
                 if not group.isdigit(): text += group+','        
             text=text[:-1] ##remove the last comma
             text += '\t'
-        if writeDataset and trigger not in L1List:
+        if writeDataset :
             for dataset in triggersDatasetMap[trigger]: text += dataset+','
             text=text[:-1] ##remove the last comma
             text += '\t'       
@@ -919,43 +919,6 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatri
                 passedEventsMatrix_Core[(dataset,trigger)] += passedEventsMatrix_Core_[trigger]
                 WeightedErrorMatrix_Core[(dataset,trigger)] += WeightedErrorMatrix_Core_[trigger]
         
-        ##fill rateTriggerDataset[(dataset,trigger)] and squaredErrorRateTriggerDataset[(dataset,trigger)]
-        if evalHLTtwogroups:
-            f = ROOT.TFile("twoGroupsCoreelations.root","recreate")
-            ROOT.gStyle.SetOptStat(0)
-            GroupCoreelHisto = ROOT.TH2F('GroupCoreelHisto','Overlapping rates for group pairs', 21, 0, 21, 21, 0, 21)
-            i = 0
-            j = 0
-            L2g = len(twoGroupsList)
-            N2g = (-1+math.pow(1+(8*L2g),0.5))/2
-        for trigger in triggerAndGroupList:
-            if isData:
-                #print passedEventsMatrix[(dataset,trigger)], rateDataset[dataset]
-                rateTriggerDataset[(dataset,trigger)] = passedEventsMatrix[(dataset,trigger)]/rateDataset[dataset]
-                squaredErrorRateTriggerDataset[(dataset,trigger)] = passedEventsMatrix[(dataset,trigger)]/(rateDataset[dataset]*rateDataset[dataset])
-                if evalHLTtwogroups:
-                    if trigger in twoGroupsList:
-                        if(i<N2g and j<N2g):
-                            GroupCoreelHisto.SetBinContent(i,j,rateTriggerDataset[(dataset,trigger)])
-                            i += 1
-                        elif(i==N2g and j<(N2g-1)):
-                            i = j+1
-                            j += 1
-                            GroupCoreelHisto.SetBinContent(i,j,rateTriggerDataset[(dataset,trigger)])
-                            i += 1
-            else:
-                rateTriggerDataset [(dataset,trigger)] = rateDataset[dataset]/totalEventsMatrix[dataset]*passedEventsMatrix[(dataset,trigger)]
-                squaredErrorRateTriggerDataset [(dataset,trigger)] = rateDataset[dataset]*rateDataset[dataset]*passedEventsMatrix[(dataset,trigger)]/totalEventsMatrix[dataset]/totalEventsMatrix[dataset] # (rateDataset*sqrt(1.*passedEvents/nevents/nevents)) **2               
-        if evalHLTtwogroups:
-            i = 1
-            for group in groupList:
-                if group != "Masked":
-                    GroupCoreelHisto.GetXaxis().SetBinLabel(i,group)
-                    GroupCoreelHisto.GetXaxis().LabelsOption("v")
-                    GroupCoreelHisto.GetYaxis().SetBinLabel(i,group)
-                    GroupCoreelHisto.GetYaxis().LabelsOption("v")
-                    i += 1
-            f.Write()
     ## do not crash if a dataset is missing!
     else:
         totalEventsMatrix[dataset]=1
@@ -1082,23 +1045,6 @@ for dataset in datasetList:
             fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,passedEventsMatrix_Core,WeightedErrorMatrix_Core,rateTriggerDataset,squaredErrorRateTriggerDataset)
             break
     else: fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,passedEventsMatrix_Core,WeightedErrorMatrix_Core,rateTriggerDataset,squaredErrorRateTriggerDataset)
-
-## evaluate the total rate with uncertainty for triggers and groups
-for dataset in datasetList:
-    if batchSplit:
-        if options.datasetName=="all":
-            for trigger in triggerAndGroupList:
-                    rateTriggerTotal[trigger] += rateTriggerDataset[(dataset,trigger)]
-                    squaredErrorRateTriggerTotal[trigger] += squaredErrorRateTriggerDataset[(dataset,trigger)]
-        elif dataset==options.datasetName:
-            for trigger in triggerAndGroupList:
-                    rateTriggerTotal[trigger] += rateTriggerDataset[(dataset,trigger)]
-                    squaredErrorRateTriggerTotal[trigger] += squaredErrorRateTriggerDataset[(dataset,trigger)]
-            break
-    else:
-        for trigger in triggerAndGroupList:
-                    rateTriggerTotal[trigger] += rateTriggerDataset[(dataset,trigger)]
-                    squaredErrorRateTriggerTotal[trigger] += squaredErrorRateTriggerDataset[(dataset,trigger)]
 
 if batchSplit: directoryname = 'ResultsBatch/'
 else: directoryname = 'Results/'

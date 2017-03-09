@@ -11,7 +11,6 @@ from datasetCrossSections.datasetCrossSectionsSummer16 import *
 Method = 11#11 #0: count, 11: MC rate
 lumi = 1.17E34
 
-ROOT.gROOT.SetBatch(ROOT.kTRUE)
 
 def my_print(datasetList):
     for dataset in datasetList:
@@ -231,6 +230,7 @@ def mergeRates(input_dir_list,output_name,keyWord,AveWrite):
 
 def plot_rate(rate_dic):
     import ROOT
+    ROOT.gROOT.SetBatch(ROOT.kTRUE)
     try:
         os.mkdir("../Results/png")
     except:
