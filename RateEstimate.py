@@ -3,55 +3,45 @@
 
 ########## Configuration #####################################################################
 from triggersGroupMap.HLT_Menu_v4p2_v6 import *
-from datasetCrossSections.datasetCrossSectionsSummer16_nu import *
+from datasetCrossSections.datasetCrossSectionsSummer16 import *
 from scripts.input_card import *
-
-batchSplit = False
-batchSplit = True
-looping = True
-looping = False
 
 ##### Adding an option to the code #####
 
-if batchSplit:
-    from optparse import OptionParser
-    parser=OptionParser()
+from optparse import OptionParser
+parser=OptionParser()
 
-    parser.add_option("-n","--number",dest="fileNumber",default="0",type="int") # python file.py -n N => options.fileNumber is N
-    parser.add_option("-d","--dataset",dest="datasetName",default="",type="str")
-    parser.add_option("-f","--name",dest="fileName",default="null",type="str")
+parser.add_option("-n","--number",dest="fileNumber",default="-1",type="int") # python file.py -n N => options.fileNumber is N
+parser.add_option("-d","--dataset",dest="datasetName",default="all",type="str")
+parser.add_option("-f","--name",dest="fileName",default="null",type="str")
 
-    (options,args)=parser.parse_args()
+(options,args)=parser.parse_args()
 
 ##### Other configurations #####
 
 #folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Summer16_FlatPU28to62/HLTRates_v4p2_V2_1p25e34_MC_2017feb09J'
-localdir = '/afs/cern.ch/user/x/xgao/eos/cms'
-lumi = 1              # luminosity [s-1cm-2]
-if (batchSplit): multiprocess = 1           # number of processes
-else: multiprocess = 1 # 8 multiprocessing disbaled for now because of incompatibilities with the way the files are accessed. Need some development.
-pileupMIN = 0
-pileupMAX = 0
-pileupFilter = True        # use pile-up filter?
-pileupFilterGen = True     # use pile-up filter gen or L1?
-useEMEnriched = False       # use plain QCD mu-enriched samples (Pt30to170)?
-useMuEnriched = False       # use plain QCD EM-enriched samples (Pt30to170)?
-evalL1 = False              # evaluate L1 triggers rates?
-evalHLTpaths = True        # evaluate HLT triggers rates?
-eval_groups = True       # evaluate HLT triggers groups rates and global HLT and L1 rates
-eval_primaryDatasets = True # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
-evalHLTprimaryDatasets_core = False # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
-evalHLTTrigger_primaryDatasets_core = False # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
-eval_stream = False # evaluate HLT triggers primary datasets rates and global HLT and L1 rates
-#evalHLTtwopaths = True    # evaluate the coreelation among the HLT trigger paths rates?
-evalHLTtwogroups = False   # evaluate the coreelation among the HLT trigger groups rates?
-evalPureRate_Group = False
-evalPureRate_Dataset = False
-evalPureRate_Stream = False
-evalExclusive_Trigger = False
-evalExclusive_group = False
-evalExclusive_dataset = False
-evalExclusive_stream = False
+looping = False			# use looping method or not. Looping method can get group, dataset and stream rates from unprescaled Ntuples.
+use_prescaled_ntuples = True	# this option will only work for looping == True.
+multiprocess = 1		# 8 multiprocessing disbaled for now because of incompatibilities with the way the files are accessed. Need some development.
+pileupMIN = 36			# get PU range for MC Ntuples.
+pileupMAX = 40
+pileupFilter = True		# use pile-up filter?
+pileupFilterGen = True		# use pile-up filter gen or L1?
+useEMEnriched = True		# use plain QCD mu-enriched samples (Pt30to170)?
+useMuEnriched = True		# use plain QCD EM-enriched samples (Pt30to170)?
+evalL1 = False			# evaluate L1 triggers rates?
+evalHLTpaths = True		# evaluate HLT triggers rates?
+eval_groups = True		# evaluate groups rates and global HLT and L1 rates
+eval_primaryDatasets = True	# evaluate primary datasets rates
+eval_primaryDatasets_core = False		# evaluate correlation rates between primary datasets
+eval_Trigger_primaryDatasets_core = False	# evaluate correlation rates between primary dataset and trigger
+eval_stream = False		# evaluate stream rates
+evalPureRate_Group = False	# evaluate proportional group rates	
+evalPureRate_Dataset = False	# evaluate proportional dataset rates
+evalPureRate_Stream = False	# evaluate proportional stream rates
+evalExclusive_Trigger = False	# evaluate exclusive trigger rates
+evalExclusive_group = False	# evaluate exclusive group rates
+
 use_json = False
 json_file_name = '/afs/cern.ch/user/x/xgao/work/RateEstimate_16_12_2016/L1_accept/json_columns/PU_45to50_v4.2.2_PS_1.45e34.json'
 label = "MC"         # name of the output files
@@ -60,23 +50,16 @@ LS_min = '0'
 LS_max = '9999'            #default is 9999
 
 isData = False
-# L1Rate studies as a function of PU and number of bunches:
-evalL1scaling = False
-
-nLS = 623 ## number of Lumi Sections run over data
-lenLS = 23.31 ## length of Lumi Section
-psNorm = 720. / 4. #*(5./4.64) #232./4. # Prescale Normalization factor if running on HLTPhysics
-###############################################################################################
-
 ## log level
 log = 2                     # use log=2
+###############################################################################################
 
 ## filter to be used for QCD EM/Mu enriched
 EM_cut = "(!HLT_BCToEFilter_v1 && HLT_EmFilter_v1)"# && HLT_EmGlobalFilter_v1)"
 Mu_cut = "(HLT_MuFilter_v1)"#"(MCmu3 && HLT_MuFilter_v1)"
 
 ## filter to be used for pile-up filter
-PUFilterGen = 'HLT_RemovePileUpDominatedEventsGenV2_v1'
+PUFilterGen = 'HLT_RemovePileUpDominatedEventsGen_v1'
 PUFilterL1 = 'HLT_RemovePileUpDominatedEvents_v1'
 
 ##### Load lib #####
@@ -282,16 +265,15 @@ def getPrescaleListInNtuples():
                     for key in eosDirContent:
                         if (("failed" in str(key['path'])) or ("log" in str(key['file'])) or ("161108_170325" in str(key['path']))): continue
                         if (".root" in str(key['file'])):
-                            if batchSplit:
-                                filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
-                            else:
-                                filenames.append(localdir+str(key['path'])+'/'+str(key['file']))
+                            filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
                         if len(filenames)>0: break
                     if len(filenames)>0: break
             if len(filenames)>0: break
  
         if len(filenames)==0:                                                                                                          
             raise ValueError('No good file found in '+folder)                                                                          
+        else:
+            filename = filenames[0]
                                                                                                                                    
     else:
         filename = "root://eoscms//eos/cms"+options.fileName
@@ -370,11 +352,9 @@ def writeMatrixEvents(fileName,datasetList,triggerList,totalEventsMatrix,passedE
             text += '\t'       
  
         for dataset in datasetList:
-            if batchSplit:
-                if options.datasetName=="all": text += str(passedEventsMatrix[(dataset,trigger)]) + '\t'
-                elif dataset==options.datasetName: text += str(passedEventsMatrix[(dataset,trigger)]) + '\t±\t' + str(sqrtMod(WeightedErrorMatrix[(dataset,trigger)])) + '\t'
-                else: text += str(0) + '\t±\t' + str(0) + '\t'
-            else: text += str(passedEventsMatrix[(dataset,trigger)]) + '\t'
+            if options.datasetName=="all": text += str(passedEventsMatrix[(dataset,trigger)]) + '\t'
+            elif dataset==options.datasetName: text += str(passedEventsMatrix[(dataset,trigger)]) + '\t±\t' + str(sqrtMod(WeightedErrorMatrix[(dataset,trigger)])) + '\t'
+            else: text += str(0) + '\t±\t' + str(0) + '\t'
 
     f.write(text)
     f.close()
@@ -412,17 +392,15 @@ def writeMatrixRates(fileName,prescaleList,datasetList,rateTriggerDataset,rateTr
         
         text += str(rateTriggerTotal[trigger])+'\t±\t'+str(sqrtMod(squaredErrorRateTriggerTotal[trigger]))+'\t'
         for dataset in datasetList:
-            if batchSplit:
-                if options.datasetName=="all": text += str(rateTriggerDataset[(dataset,trigger)]) + '\t±\t' + str(sqrtMod(squaredErrorRateTriggerDataset[(dataset,trigger)])) + '\t'
-                elif dataset==options.datasetName: text += str(rateTriggerDataset[(dataset,trigger)]) + '\t±\t' + str(sqrtMod(squaredErrorRateTriggerDataset[(dataset,trigger)])) + '\t'
-                else: text += str(0) + '\t±\t' +str(0) + '\t'
-            else: text += str(rateTriggerDataset[(dataset,trigger)]) + '\t±\t' + str(sqrtMod(squaredErrorRateTriggerDataset[(dataset,trigger)])) + '\t'
+            if options.datasetName=="all": text += str(rateTriggerDataset[(dataset,trigger)]) + '\t±\t' + str(sqrtMod(squaredErrorRateTriggerDataset[(dataset,trigger)])) + '\t'
+            elif dataset==options.datasetName: text += str(rateTriggerDataset[(dataset,trigger)]) + '\t±\t' + str(sqrtMod(squaredErrorRateTriggerDataset[(dataset,trigger)])) + '\t'
+            else: text += str(0) + '\t±\t' +str(0) + '\t'
 
     f.write(text)
     f.close()
     
 ## compare the trigger list from the ntuple and from triggersGroupMap*.py and print the difference
-def CompareGRunVsGoogleDoc(datasetList,triggerList,folder_list):
+def CompareGRunVsGoogleDoc(datasetList,triggerList):
     # take the first "hltbit" file
     local_run = True
     filenames = []
@@ -436,18 +414,17 @@ def CompareGRunVsGoogleDoc(datasetList,triggerList,folder_list):
                     walking_folder = folder+"/"+dataset
                     lsl(walking_folder,eosDirContent)
                     for key in eosDirContent:
-                        if (("failed" in str(key['path'])) or ("log" in str(key['file'])) or ("161108_170325" in str(key['path']))): continue
+                        if (("failed" in str(key['path'])) or ("log" in str(key['file']))): continue
                         if (".root" in str(key['file'])):
-                            if batchSplit:
-                                filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
-                            else:
-                                filenames.append(localdir+str(key['path'])+'/'+str(key['file']))
+                            filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
                         if len(filenames)>0: break
                     if len(filenames)>0: break
             if len(filenames)>0: break
 
         if len(filenames)==0:
             raise ValueError('No good file found in '+folder)
+        else:
+            filename = filenames[0]
     else: 
         filename = "root://eoscms//eos/cms"+options.fileName
     _file0 = ROOT.TFile.Open(filename)
@@ -584,52 +561,35 @@ def getEvents(input_):
         #if tree is defined, get totalEvents and passedEvents
         if (tree!=None):
             N = tree.GetEntries()
-
             i = 0
-
-            presclFromMap = False
-            lumiColumn = 1
-            # Filling the prescale dictionary using the map
-            if (presclFromMap):
-                for trigger in triggersL1GroupMap.keys():
-                    L1PrescDict[trigger] = triggersL1GroupMap[trigger][lumiColumn]
-        
             # Looping over the events to compute the rates
-            u = 0
+            n_processed = 0
             print "Nevents =",N
             Total_count = 0
             Total_LS = 0
-            runnr = 0
-            runls = 0
             runstr = ""
             for event in tree:
-                if u%(N/50)==0: print "\r{0:.1f} %".format(100*float(u)/float(N))
-                u += 1 
-                runnr = int(getattr(event,'Run'))
-                runls = int(getattr(event,'LumiBlock'))
+                if n_processed%(N/50)==0: print "\r{0:.1f} %".format(100*float(n_processed)/float(N))
+                n_processed += 1 
                 if use_json:
                    if (not check_json(int(getattr(event,'Run')),int(getattr(event,'LumiBlock')))):continue
                 else :
                     if (int(runNo) != 0) and int(getattr(event,'Run')) != int(runNo):continue
                     if (int(runNo) != 0) and (int(getattr(event,'LumiBlock')) < int(LS_min) or int(getattr(event,'LumiBlock')) > int(LS_max)):continue
                 Total_count +=1
+                runnr = int(getattr(event,'Run'))
+                runls = int(getattr(event,'LumiBlock'))
                 runstr = str((dataset,runnr,runls))
                 if not runstr in runlist:
                     runlist.append(runstr)
                     Total_LS += 1
-
-                if isData: PUevent = 0
                 if not isData: 
                     PUevent = getattr(event,"NPUTrueBX0")
                     if (PUevent>pileupMAX or PUevent<pileupMIN): 
                         continue
                 #print runlist
                 TriggerCount = 0
-                L1Count = 0
-                L1Presc = 0
-                filterFloat = 1
                 stringMemory = ""
-                psMultiple = False
                 tmp_PureWeight = 0
                 count_pure_trigger = 0
                 count_pure_group = 0
@@ -647,59 +607,68 @@ def getEvents(input_):
                     if trigger in corelation_datasetList:continue
                     if trigger in groupList: 
                         triggerInGroupList = getTriggerString[trigger].split('||')
-                        psMultiple = False
                         tempCount = 1e+10 
                         for path in triggerInGroupList:     
                             if not (path in triggerList):continue
                             if (path not in prescaleMap.keys()) or int(prescaleMap[path][0])==0 or prescaleMap[path][0]=='' or 'DST_' in path or 'AlCa_' in path: continue 
                             TriggerCount = getattr(event,path) 
-                            if TriggerCount and filterFloat and (int(prescaleMap[path][0])<tempCount): tempCount = int(prescaleMap[path][0])
+                            if TriggerCount and (int(prescaleMap[path][0])<tempCount): tempCount = int(prescaleMap[path][0])
                         if tempCount==1e+10: continue
                         passedEventsMatrix_[trigger] += 1/float(tempCount)
                         WeightedErrorMatrix_[trigger] += (1/float(tempCount))*(1/float(tempCount))
                         if "All" in trigger or "type" in trigger: continue
-                        PureCount_dic[("group",trigger)] = tempCount
+                        if use_prescaled_ntuples:
+                            PureCount_dic[("group",trigger)] = 1.0
+                        else:
+                            PureCount_dic[("group",trigger)] = tempCount
                         count_pure_group += 1
                         corelation_group_list.append(trigger)
                     elif trigger in primaryDatasetList:
                         triggerInDatasetList = getTriggerString[trigger].split('||')
-                        psMultiple = False
                         tempCount = 1e+10
                         for path in triggerInDatasetList:
                             if not (path in triggerList):continue
                             if (path not in prescaleMap.keys()) or int(prescaleMap[path][0])==0 or prescaleMap[path][0]=='': continue
                             TriggerCount = getattr(event,path)
-                            if TriggerCount and filterFloat and (int(prescaleMap[path][0])<tempCount): tempCount = int(prescaleMap[path][0])
+                            if TriggerCount and (int(prescaleMap[path][0])<tempCount): tempCount = int(prescaleMap[path][0])
                         if tempCount==1e+10: continue
                         passedEventsMatrix_[trigger] += 1/float(tempCount)
                         WeightedErrorMatrix_[trigger] += (1/float(tempCount))*(1/float(tempCount))
                         if trigger in pure_primaryDatasetList:
-                            PureCount_dic[("dataset",trigger)] = tempCount
+                            if use_prescaled_ntuples:
+                                PureCount_dic[("dataset",trigger)] = 1.0
+                            else:
+                                PureCount_dic[("dataset",trigger)] = tempCount
                             count_pure_dataset += 1
                             corelation_dataset_list.append(trigger)
                     elif trigger in streamList:
                         triggerInStreamList = getTriggerString[trigger].split('||')
-                        psMultiple = False
                         tempCount = 1e+10
                         for path in triggerInStreamList:
                             if not (path in triggerList):continue
                             if (path not in prescaleMap.keys()) or int(prescaleMap[path][0])==0 or prescaleMap[path][0]=='': continue
                             TriggerCount = getattr(event,path)
-                            if TriggerCount and filterFloat and (int(prescaleMap[path][0])<tempCount): tempCount = int(prescaleMap[path][0])
+                            if TriggerCount and (int(prescaleMap[path][0])<tempCount): tempCount = int(prescaleMap[path][0])
                         if tempCount==1e+10: continue
                         passedEventsMatrix_[trigger] += 1/float(tempCount)
                         WeightedErrorMatrix_[trigger] += (1/float(tempCount))*(1/float(tempCount))
                         if trigger in pure_streamList:
-                            PureCount_dic[("stream",trigger)] = tempCount
+                            if use_prescaled_ntuples:
+                                PureCount_dic[("stream",trigger)] = 1.0
+                            else:
+                                PureCount_dic[("stream",trigger)] = tempCount
                             count_pure_stream += 1
                     else:
                         if (trigger not in prescaleMap.keys()) or int(prescaleMap[trigger][0])==0 or prescaleMap[trigger][0]=='': continue 
                         else: 
                             TriggerCount = getattr(event,trigger)
-                            if (TriggerCount==1 and filterFloat==1):
+                            if (TriggerCount==1):
                                 passedEventsMatrix_[trigger] += 1/float(prescaleMap[trigger][0])
                                 WeightedErrorMatrix_[trigger] += (1/float(prescaleMap[trigger][0]))*(1/float(prescaleMap[trigger][0]))
-                                PureCount_dic[("trigger",trigger)] = float(prescaleMap[trigger][0])
+                                if use_prescaled_ntuples:
+                                    PureCount_dic[("trigger",trigger)] = 1.0
+                                else:
+                                    PureCount_dic[("trigger",trigger)] = float(prescaleMap[trigger][0])
                                 corelation_trigger_list.append(trigger)
                                 if trigger in pure_triggerList:
                                     count_exclusive_trigger += 1
@@ -729,9 +698,9 @@ def getEvents(input_):
                     #if typ == "dataset": print "N=%d,  %s : %0.4f,  %0.4f"%(tmp_PureWeight,trigger, 1/float(PureCount_dic[(typ,trigger)]),1/float(tempCount))
                     #if typ == "stream": print "N=%d,  %s : %0.4f,  %0.4f"%(tmp_PureWeight,trigger, 1/float(PureCount_dic[(typ,trigger)]),1/float(tempCount))
 
-                if evalHLTprimaryDatasets_core:
+                if eval_primaryDatasets_core:
                     my_coreelation(corelation_dataset_list, corelation_dataset_list, passedEventsMatrix_Core_, WeightedErrorMatrix_Core_, PureCount_dic, "dataset", "dataset")
-                if evalHLTTrigger_primaryDatasets_core:
+                if eval_Trigger_primaryDatasets_core:
                     my_coreelation(corelation_trigger_list, corelation_dataset_list, passedEventsMatrix_Core_, WeightedErrorMatrix_Core_, PureCount_dic, "trigger", "dataset")
             totalEventsMatrix_ = Total_count
             totalLSMatrix_ = Total_LS
@@ -767,12 +736,8 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatri
                 for key in eosDirContent:
                     if (("failed" in str(key['path'])) or ("log" in str(key['file'])) or ("161108_170325" in str(key['path']))): continue
                     if (".root" in str(key['file'])):
-                        if batchSplit:
-                            filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
-                            dirpath = "root://eoscms//eos/cms"+walking_folder
-                        else:
-                            filenames.append(localdir+str(key['path'])+'/'+str(key['file']))
-                            dirpath = localdir+walking_folder
+                        filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
+                        dirpath = "root://eoscms//eos/cms"+walking_folder
     else:
         filenames.append("root://eoscms//eos/cms"+options.fileName)
         dirpath = "root://eoscms//eos/cms"+options.fileName
@@ -780,28 +745,12 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatri
         print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 
     ## print an error if a dataset is missing
-    if batchSplit:
-        if (dirpath=='' or (len(filenames)<options.fileNumber)) and (options.fileName=="null"):
+    if (dirpath=='' or (len(filenames)<options.fileNumber)) and (options.fileName=="null"):
             print
             print '#'*80
             print '#'*10,"dataset=",dataset," not found!"
             print '#'*80
             skip = True
-    else:
-        if dirpath=='':
-            print
-            print '#'*80
-            print '#'*10,"dataset=",dataset," not found!"
-            print '#'*80
-            skip = True
-    
-    ## get the cross section and the global rate of the dataset
-    xsection = xsectionDatasets[dataset] #pb
-    if isData:
-        rateDataset[dataset] = (1./psNorm)*lenLS*nLS*lumi*xsection
-    else:
-        print "lumi = ",lumi," xsection = ",xsection
-        rateDataset [dataset] = lumi*xsection*1E-24/1E12 # [1b = 1E-24 cm^2, 1b = 1E12pb ]
     
     ## check if the dataset belong to the (anti) QCD EM/Mu enriched dataset lists or it contains negative weights
     isEMEnriched = False
@@ -860,7 +809,6 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatri
             print "Loading folder:",walking_folder
             print "First file:",filenames[0]
             print "nfiles =",len(filenames)
-            print "total rate of dataset =",rateDataset [dataset]
             print "using numerator filter:",filterString
             print "using denominator filter:",denominatorString
             print "using negative weight? ",withNegativeWeights
@@ -871,26 +819,19 @@ def fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatri
     if not skip:
         ## prepare the input for getEvents((filepath,filterString,denominatorString))
         inputs = []
-        i = 1
-        for filename in filenames:
-            print "number of filenames :",len(filenames)
-            fileTest = ROOT.TFile.Open(filename)
-            if fileTest:
-                if(batchSplit):
-                    if(options.fileName != "null"):
-                        print "file ",options.fileNumber," (",filename,") added to inputs -f"
-                        inputs.append((filename,filterString,denominatorString,withNegativeWeights,dataset))
-                        break
-                    elif(i==options.fileNumber):
-                        print "file ",i," (",filename,") added to inputs"
-                        inputs.append((filename,filterString,denominatorString,withNegativeWeights,dataset))
-                        break
-                    elif(options.fileNumber==-1):
-                        print "file ",i," (",filename,") added to inputs"
-                        inputs.append((filename,filterString,denominatorString,withNegativeWeights,dataset))
-                else: inputs.append((filename,filterString,denominatorString,withNegativeWeights,dataset))
-            i += 1
-            #if i==16:break
+        if(options.fileName != "null"):
+            filename = filenames[0]
+            print "file %s added to inputs -f"%(filename)
+            inputs.append((filename,filterString,denominatorString,withNegativeWeights,dataset))
+        elif(options.fileNumber > 0):
+            filename = filenames[options.fileNumber-1]
+            print "file ",options.fileNumber," (",filename,") added to inputs"
+            inputs.append((filename,filterString,denominatorString,withNegativeWeights,dataset))
+        else:
+            print "All files (%d in total) added to inputs"%(len(filenames))
+            for i in range(len(filenames)):
+                filename = filenames[i]
+                inputs.append((filename,filterString,denominatorString,withNegativeWeights,dataset))
  
         ## evaluate the number of events that pass the trigger with getEvents()
         if multiprocess>1:
@@ -947,14 +888,12 @@ print "Using up to ", multiprocess ," processes."
 print "Folder list: "
 for folder in folder_list:
     print folder
-print "Luminosity: ", lumi
 print "Use QCDEMEnriched? ", useEMEnriched
 print "Use QCDMuEnriched? ", useMuEnriched
 print "Evaluate L1 triggers rates? ", evalL1
 print "Evaluate HLT triggers rates? ", evalHLTpaths
 #print "Evaluate HLT triggers shared rates? ", evalHLTtwopaths
 print "Evaluate HLT groups rates? ", eval_groups
-print "Evaluate HLT groups shared rates? ", evalHLTtwogroups
 print "Pile-up filter: ",pileupFilter
 if pileupFilter:
     print "Pile-up filter version: ",
@@ -976,10 +915,10 @@ triggerAndGroupList_core=[]
 #if not evalL1: groupList.remove('L1')
 #if not evalHLTpaths : groupList.remove('All_HLT')
 if evalHLTpaths:
-    HLTList = CompareGRunVsGoogleDoc(datasetList,HLTList,folder)
+    HLTList = CompareGRunVsGoogleDoc(datasetList,HLTList)
     triggerAndGroupList=triggerAndGroupList+HLTList
 if evalL1:              
-    L1List = CompareGRunVsGoogleDoc(datasetList,L1List,folder)
+    L1List = CompareGRunVsGoogleDoc(datasetList,L1List)
     triggerAndGroupList=triggerAndGroupList+L1List
 
 if eval_primaryDatasets: 
@@ -989,11 +928,9 @@ if eval_stream:
 if eval_groups:       
     triggerAndGroupList=triggerAndGroupList+groupList
 #if evalHLTtwopaths:     triggerAndGroupList=triggerAndGroupList+twoHLTsList
-if evalHLTtwogroups:    
-    triggerAndGroupList=triggerAndGroupList+twoGroupsList
-if evalHLTprimaryDatasets_core: 
+if eval_primaryDatasets_core: 
     triggerAndGroupList_core=triggerAndGroupList_core+corelation_datasetList
-if evalHLTTrigger_primaryDatasets_core: 
+if eval_Trigger_primaryDatasets_core: 
     triggerAndGroupList_core=triggerAndGroupList_core+corelation_trigger_datasetList
 #if evalL1:              triggerAndGroupList=triggerAndGroupList+L1List
 
@@ -1003,8 +940,8 @@ if evalHLTTrigger_primaryDatasets_core:
 #if evalHLTpaths:        triggerList=triggerList+HLTList
 #if evalL1:              triggerList=triggerList+L1List
 ## check trigger list in triggersGroupMap (ie. ~ Google doc), with trigger bits in ntuples (ie. GRun)
-if evalHLTpaths or evalL1: triggerList = CompareGRunVsGoogleDoc(datasetList,triggerList,folder)
-if evalExclusive_Trigger: pure_triggerList = CompareGRunVsGoogleDoc(datasetList,pure_triggerList,folder)
+if evalHLTpaths or evalL1: triggerList = CompareGRunVsGoogleDoc(datasetList,triggerList)
+if evalExclusive_Trigger: pure_triggerList = CompareGRunVsGoogleDoc(datasetList,pure_triggerList)
 
 
 # define dictionaries
@@ -1019,7 +956,6 @@ WeightedErrorMatrix_Exclusive = {}
 
 totalEventsMatrix = {}                  #totalEventsMatrix[(dataset,trigger)] = total events of a dataset
 totalLSMatrix = {}                      #totalEventsMatrix[(dataset,trigger)] = total lumi section of a dataset
-rateDataset = {}                        #rateDataset[dataset] = rate of a dataset (xsect*lumi)
 rateTriggerDataset = {}                 #rateTriggerDataset[(dataset,trigger)] = rate of a trigger in a dataset
 squaredErrorRateTriggerDataset = {}     #squaredErrorRateTriggerDataset[(dataset,trigger)] = squared error on the rate
 rateTriggerTotal = {}                   #rateTriggerTotal[(dataset,trigger)] = total rate of a trigger
@@ -1039,19 +975,21 @@ prescaleList = getPrescaleListInNtuples()
 
 ## loop on dataset and fill matrix with event counts, rates, and squared errors
 for dataset in datasetList:
-    if batchSplit:
-        if options.datasetName=="all": fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,passedEventsMatrix_Core,WeightedErrorMatrix_Core,rateTriggerDataset,squaredErrorRateTriggerDataset)
+    if options.fileName =="null": 
+        if options.datasetName=="all"
+            fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,passedEventsMatrix_Core,WeightedErrorMatrix_Core,rateTriggerDataset,squaredErrorRateTriggerDataset)
         elif dataset==options.datasetName:
             fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,passedEventsMatrix_Core,WeightedErrorMatrix_Core,rateTriggerDataset,squaredErrorRateTriggerDataset)
             break
-    else: fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,passedEventsMatrix_Core,WeightedErrorMatrix_Core,rateTriggerDataset,squaredErrorRateTriggerDataset)
+    else:
+        if dataset in options.fileName:
+            fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,passedEventsMatrix_Core,WeightedErrorMatrix_Core,rateTriggerDataset,squaredErrorRateTriggerDataset)
+            break
 
-if batchSplit: directoryname = 'ResultsBatch/'
-else: directoryname = 'Results/'
+directoryname = 'ResultsBatch/'
 filename = ''
 filename += label
 filename += "_"+triggerName
-filename += "_"+str(lumi).replace("+","")
 if pileupFilter:
     if pileupFilterGen:filename += '_PUfilterGen'
     else:filename += '_PUfilterL1'
@@ -1060,48 +998,45 @@ if useEMEnriched: filename += '_EMEn'
 if useMuEnriched: filename += '_MuEn'
 
 
-if batchSplit:
+try:
+    #mkdir("ResultsBatch_Parking2_Parking3")
+    if not os.path.exists(directoryname+"ResultsBatch_LS"): os.makedirs(directoryname+"ResultsBatch_LS")
+    if not os.path.exists(directoryname+"ResultsBatch_Events"): os.makedirs(directoryname+"ResultsBatch_Events")
+    if not os.path.exists(directoryname+"ResultsBatch_groupEvents"): os.makedirs(directoryname+"ResultsBatch_groupEvents")
+    if not os.path.exists(directoryname+"ResultsBatch_primaryDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_primaryDatasetEvents")
+    if not os.path.exists(directoryname+"ResultsBatch_streamEvents"): os.makedirs(directoryname+"ResultsBatch_streamEvents")
+    if not os.path.exists(directoryname+"ResultsBatch_Pure_groupEvents"): os.makedirs(directoryname+"ResultsBatch_Pure_groupEvents")
+    if not os.path.exists(directoryname+"ResultsBatch_Pure_primaryDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_Pure_primaryDatasetEvents")
+    if not os.path.exists(directoryname+"ResultsBatch_Pure_streamEvents"): os.makedirs(directoryname+"ResultsBatch_Pure_streamEvents")
+    if not os.path.exists(directoryname+"ResultsBatch_Core_primaryDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_Core_primaryDatasetEvents")
+    if not os.path.exists(directoryname+"ResultsBatch_Core_TriggerDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_Core_TriggerDatasetEvents")
+    if not os.path.exists(directoryname+"ResultsBatch_Exclusive_Events"): os.makedirs(directoryname+"ResultsBatch_Exclusive_Events")
+    if not os.path.exists(directoryname+"ResultsBatch_Exclusive_groupEvents"): os.makedirs(directoryname+"ResultsBatch_Exclusive_groupEvents")
+    if not os.path.exists(directoryname+"ResultsBatch_Exclusive_primaryDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_Exclusive_primaryDatasetEvents")
+except:
+    pass
 
-    try:
-        #mkdir("ResultsBatch_Parking2_Parking3")
-        if not os.path.exists(directoryname+"ResultsBatch_LS"): os.makedirs(directoryname+"ResultsBatch_LS")
-        if not os.path.exists(directoryname+"ResultsBatch_Events"): os.makedirs(directoryname+"ResultsBatch_Events")
-        if not os.path.exists(directoryname+"ResultsBatch_groupEvents"): os.makedirs(directoryname+"ResultsBatch_groupEvents")
-        if not os.path.exists(directoryname+"ResultsBatch_primaryDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_primaryDatasetEvents")
-        if not os.path.exists(directoryname+"ResultsBatch_streamEvents"): os.makedirs(directoryname+"ResultsBatch_streamEvents")
-        if not os.path.exists(directoryname+"ResultsBatch_Pure_groupEvents"): os.makedirs(directoryname+"ResultsBatch_Pure_groupEvents")
-        if not os.path.exists(directoryname+"ResultsBatch_Pure_primaryDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_Pure_primaryDatasetEvents")
-        if not os.path.exists(directoryname+"ResultsBatch_Pure_streamEvents"): os.makedirs(directoryname+"ResultsBatch_Pure_streamEvents")
-        if not os.path.exists(directoryname+"ResultsBatch_Core_primaryDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_Core_primaryDatasetEvents")
-        if not os.path.exists(directoryname+"ResultsBatch_Core_TriggerDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_Core_TriggerDatasetEvents")
-        if not os.path.exists(directoryname+"ResultsBatch_Exclusive_Events"): os.makedirs(directoryname+"ResultsBatch_Exclusive_Events")
-        if not os.path.exists(directoryname+"ResultsBatch_Exclusive_groupEvents"): os.makedirs(directoryname+"ResultsBatch_Exclusive_groupEvents")
-        if not os.path.exists(directoryname+"ResultsBatch_Exclusive_primaryDatasetEvents"): os.makedirs(directoryname+"ResultsBatch_Exclusive_primaryDatasetEvents")
-    except:
-        pass
+### write files with events count
+writeMatrixLS(directoryname+'ResultsBatch_LS/'+filename+'_matrixEvents_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',runlist)
+###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+if evalL1: writeMatrixEvents(directoryname+'ResultsBatch_Events/'+filename+'_L1_matrixEvents_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,L1List,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,True,True)
+if evalHLTpaths: writeMatrixEvents(directoryname+'ResultsBatch_Events/'+filename+'_matrixEvents_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,HLTList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,True,True)
 
-    ### write files with events count
-    writeMatrixLS(directoryname+'ResultsBatch_LS/'+filename+'_matrixEvents_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',runlist)
-    ###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    if evalL1: writeMatrixEvents(directoryname+'ResultsBatch_Events/'+filename+'_L1_matrixEvents_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,L1List,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,True,True)
-    if evalHLTpaths: writeMatrixEvents(directoryname+'ResultsBatch_Events/'+filename+'_matrixEvents_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,HLTList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix,True,True)
+if eval_primaryDatasets: writeMatrixEvents(directoryname+'ResultsBatch_primaryDatasetEvents/'+filename+'_matrixEvents_primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,primaryDatasetList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
+if eval_groups: writeMatrixEvents(directoryname+'ResultsBatch_groupEvents/'+filename+'_matrixEvents_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
+if eval_stream: writeMatrixEvents(directoryname+'ResultsBatch_streamEvents/'+filename+'_matrixEvents_stream_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,streamList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
 
-    if eval_primaryDatasets: writeMatrixEvents(directoryname+'ResultsBatch_primaryDatasetEvents/'+filename+'_matrixEvents_primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,primaryDatasetList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
-    if eval_groups: writeMatrixEvents(directoryname+'ResultsBatch_groupEvents/'+filename+'_matrixEvents_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
-    if eval_stream: writeMatrixEvents(directoryname+'ResultsBatch_streamEvents/'+filename+'_matrixEvents_stream_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,streamList,totalEventsMatrix,passedEventsMatrix,WeightedErrorMatrix)
+if evalPureRate_Group: writeMatrixEvents(directoryname+'ResultsBatch_Pure_groupEvents/'+filename+'_matrixEvents_Pure_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure)
+if evalPureRate_Dataset: writeMatrixEvents(directoryname+'ResultsBatch_Pure_primaryDatasetEvents/'+filename+'_matrixEvents_Pure_primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,pure_primaryDatasetList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure)
+if evalPureRate_Stream: writeMatrixEvents(directoryname+'ResultsBatch_Pure_streamEvents/'+filename+'_matrixEvents_Pure_Stream_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,streamList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure)
 
-    if evalPureRate_Group: writeMatrixEvents(directoryname+'ResultsBatch_Pure_groupEvents/'+filename+'_matrixEvents_Pure_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure)
-    if evalPureRate_Dataset: writeMatrixEvents(directoryname+'ResultsBatch_Pure_primaryDatasetEvents/'+filename+'_matrixEvents_Pure_primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,pure_primaryDatasetList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure)
-    if evalPureRate_Stream: writeMatrixEvents(directoryname+'ResultsBatch_Pure_streamEvents/'+filename+'_matrixEvents_Pure_Stream_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,streamList,totalEventsMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure)
+if evalExclusive_Trigger: writeMatrixEvents(directoryname+'ResultsBatch_Exclusive_Events/'+filename+'_matrixEvents_Exclusive_trigger_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,pure_triggerList,totalEventsMatrix,passedEventsMatrix_Exclusive,WeightedErrorMatrix_Exclusive,True,True)
+if evalExclusive_group: writeMatrixEvents(directoryname+'ResultsBatch_Exclusive_groupEvents/'+filename+'_matrixEvents_Exclusive_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix_Exclusive,WeightedErrorMatrix_Exclusive)
 
-    if evalExclusive_Trigger: writeMatrixEvents(directoryname+'ResultsBatch_Exclusive_Events/'+filename+'_matrixEvents_Exclusive_trigger_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,pure_triggerList,totalEventsMatrix,passedEventsMatrix_Exclusive,WeightedErrorMatrix_Exclusive,True,True)
-    if evalExclusive_group: writeMatrixEvents(directoryname+'ResultsBatch_Exclusive_groupEvents/'+filename+'_matrixEvents_Exclusive_groups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,groupList,totalEventsMatrix,passedEventsMatrix_Exclusive,WeightedErrorMatrix_Exclusive)
-
-    if evalHLTprimaryDatasets_core: writeMatrixEvents(directoryname+'ResultsBatch_Core_primaryDatasetEvents/'+filename+'_matrixEvents_Core_primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,corelation_datasetList,totalEventsMatrix,passedEventsMatrix_Core,WeightedErrorMatrix_Core)
-    if evalHLTTrigger_primaryDatasets_core: writeMatrixEvents(directoryname+'ResultsBatch_Core_TriggerDatasetEvents/'+filename+'_matrixEvents_Core_TriggerDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,corelation_trigger_datasetList,totalEventsMatrix,passedEventsMatrix_Core,WeightedErrorMatrix_Core)
+if eval_primaryDatasets_core: writeMatrixEvents(directoryname+'ResultsBatch_Core_primaryDatasetEvents/'+filename+'_matrixEvents_Core_primaryDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,corelation_datasetList,totalEventsMatrix,passedEventsMatrix_Core,WeightedErrorMatrix_Core)
+if eval_Trigger_primaryDatasets_core: writeMatrixEvents(directoryname+'ResultsBatch_Core_TriggerDatasetEvents/'+filename+'_matrixEvents_Core_TriggerDataset_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,corelation_trigger_datasetList,totalEventsMatrix,passedEventsMatrix_Core,WeightedErrorMatrix_Core)
 
 
-    if evalHLTtwogroups: writeMatrixEvents(filename+'_matrixEvents.twogroups_'+str(options.datasetName)+'_'+str(options.fileNumber)+'.tsv',datasetList,twoGroupsList,totalEventsMatrix,passedEventsMatrix)
 
 ## print timing
 endGlobal = time.time()

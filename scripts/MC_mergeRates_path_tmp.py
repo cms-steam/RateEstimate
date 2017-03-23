@@ -266,9 +266,6 @@ def plot_rate_part(path,rate_list,c1):
     c1.Print("../Results/png/%s.png"%(path))
     return
         
-
-
-
 def getPS(steamFile, column_path, column_HLT, column_L1):
     ps_dic = {}
     if '.csv' in steamFile:

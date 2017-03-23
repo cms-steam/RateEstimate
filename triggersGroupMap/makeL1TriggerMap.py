@@ -13,7 +13,6 @@ column_L1Seed = 24
 
 column2_L1trigger = 1 
 column2_L1ps = 6
-use_prescaled_ntuples = True
 
 triggerDataset = {}
 triggerStream = {}
@@ -59,8 +58,6 @@ def getL1prescale(filename, column_path, column_ps):
             prescale = prescale.replace(' ','')
             prescale = prescale.replace(',','.')
             tmp_ps = float(prescale)
-            if (tmp_ps !=0 and tmp_ps <1) or use_prescaled_ntuples:
-                tmp_ps = 1
             prescale_dic[line[column_path]] = []
             prescale_dic[line[column_path]].append(str(int(tmp_ps)))
     return prescale_dic
