@@ -5,12 +5,12 @@ import shlex
 import subprocess
 import sys
 sys.path.append("../")
-from triggersGroupMap.HLT_Menu_v4p2_v6_fake import *
 from datasetCrossSections.datasetCrossSectionsSummer16 import *
+from input_card import *
 
 
 MYDIR=os.getcwd()
-folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Spring16_FlatPU8to37/HLTRates_v4p2_V2_unPS_MC_lowPU_2017jan24'
+#folder = '/store/group/dpg_trigger/comm_trigger/TriggerStudiesGroup/STEAM/Summer16_FlatPU28to62/HLTRates_v4p2_V2_1p25e34_MC_2017feb09J'
 
 def runCommand(commandLine):
     #sys.stdout.write("%s\n" % commandLine)
@@ -20,27 +20,15 @@ def runCommand(commandLine):
 
 def lsl(file_or_path,my_filelist):
     executable_eos = '/afs/cern.ch/project/eos/installation/cms/bin/eos.select'
-    '''
-    List EOS file/directory content, returning the information found in 'eos ls -l'.
-    The output is a list of dictionaries with the following entries:
-        permissions
-        file
-        modified
-        size (in bytes)
-    An exception of type IOError will be raised in case file/directory does not exist.
-    '''
 
     directory = os.path.dirname(file_or_path)
     ls_command = runCommand('%s ls -l %s' % (executable_eos, file_or_path))
 
     stdout, stderr = ls_command.communicate()
-    #print "stdout = ", stdout
     status = ls_command.returncode
-    #print "status = ", status
     if status != 0:
         raise IOError("File/path = %s does not exist !!" % file_or_path)
 
-    retVal = []
     for line in stdout.splitlines():
         fields = line.split()
         if len(fields) < 8:
@@ -51,9 +39,6 @@ def lsl(file_or_path,my_filelist):
             'file' : fields[8]
         }
         time_stamp = " ".join(fields[5:8])
-        # CV: value of field[7] may be in format "hour:minute" or "year".
-        #     if number contains ":" it means that value specifies hour and minute when file/directory was created
-        #      and file/directory was created this year.
         if time_stamp.find(':') != -1:
             file_info['time'] = time.strptime(
                 time_stamp + " " + str(datetime.datetime.now().year),
@@ -61,8 +46,6 @@ def lsl(file_or_path,my_filelist):
         else:
             file_info['time'] = time.strptime(time_stamp, "%b %d %Y")
         file_info['path'] = file_or_path
-        #print "file_info = " % file_info
-        retVal.append(file_info)
         my_filelist.append(file_info)
         tmp_path=file_info['path']+'/'+file_info['file']
         if not '.' in tmp_path[-5:]:
@@ -76,25 +59,57 @@ def lsl(file_or_path,my_filelist):
     return
 
 
+def check_lsl(path, dataset):
+    executable_eos = '/afs/cern.ch/project/eos/installation/cms/bin/eos.select'
+    '''
+    List EOS file/directory content, returning the information found in 'eos ls -l'.
+    The output is a list of dictionaries with the following entries:
+        permissions
+        file
+        modified
+        size (in bytes)
+    An exception of type IOError will be raised in case file/directory does not exist.
+    '''
+
+    directory = os.path.dirname(path)
+    ls_command = runCommand('%s ls -l %s' % (executable_eos, path))
+
+    stdout, stderr = ls_command.communicate()
+    #print "stdout = ", stdout
+    status = ls_command.returncode
+    #print "status = ", status
+    if status != 0:
+        raise IOError("File/path = %s does not exist !!" % path)
+
+    for line in stdout.splitlines():
+        fields = line.split()
+        if len(fields) < 8:
+            continue
+        file_info = {
+            'permissions' : fields[0],
+            'size' : int(fields[4]),
+            'file' : fields[8]
+        }
+        if dataset in file_info['file']:return True
+    return False
+
+
 
 def getdatasetfilenum(dataset):
-    dirpath=''
     filenames=[]
     noRootFile = True
-    walking_folder = folder+"/"+dataset
-    eosDirContent=[]
-    try:
-        lsl(walking_folder,eosDirContent)
-    except:
-        pass
-    for key in eosDirContent:
-        if (("failed" in str(key['path'])) or ("log" in str(key['file']))): continue
-        if (".root" in str(key['file'])):
-            filenames.append("root://eoscms//eos/cms"+str(key['path'])+'/'+str(key['file']))
-            dirpath = "root://eoscms//eos/cms"+walking_folder
-            noRootFile = False
-#    print filenames
-    return len(filenames)
+    for folder in folder_list:
+        if check_lsl(folder, dataset):
+            eosDirContent=[]
+            walking_folder = folder+"/"+dataset
+            lsl(walking_folder,eosDirContent)
+            for key in eosDirContent:
+                if (("failed" in str(key['path'])) or ("log" in str(key['file']))): continue
+                if (".root" in str(key['file'])):
+                    filenames.append(str(key['path'])+'/'+str(key['file']))
+                    noRootFile = False
+            #break
+    return filenames
 
 
 
@@ -103,11 +118,14 @@ def getsubdic(datasetList):
     dic={}
     for dataset in datasetList:
         dic[dataset]=getdatasetfilenum(dataset)
-        sum1+=dic[dataset]
-        print dataset+'  ,  ',dic[dataset]
+        sum1+=len(dic[dataset])
+        print dataset+'  ,  ',len(dic[dataset])
     return dic,sum1
 
-def subpu(minPU,maxPU,datasetList,numdic,my_sum):
+def subpu(minPU,maxPU,datasetList,filedic,my_sum,loop_mark = 5):
+    numdic= {}
+    for dataset in datasetList:
+        numdic[dataset] = len(filedic[dataset])
     try:
         tmp_dir='sub_%sto%s'%(str(minPU),str(maxPU))
         os.mkdir(tmp_dir)
@@ -122,30 +140,52 @@ def subpu(minPU,maxPU,datasetList,numdic,my_sum):
         print "err!"
         pass
     j=1
+    tmp_text = ''
+    sub_total = open("sub_total.jobb","w")
+    local_total = open("local_total.jobb","w")
     for dataset in datasetList:
+        k = 0
+        pre_k = 0
         for i in range(1,numdic[dataset]+1):
             print 'PU~[%s,%s]: %s : %d/%d '%(str(minPU),str(maxPU),dataset,i,numdic[dataset])
             print 'total: %d/%d  ;  %.1f %% processed '%(j,my_sum,(100*float(j)/float(my_sum)))
-        
-            try:
-                tmp_jobname="submit_%s_%s.jobb"%(dataset,str(i))
-                tmp_job=open(MYDIR+'/'+tmp_dir+'/sub_job/'+tmp_jobname,'w')
-                tmp_job.write("curr_dir=%s\n"%(MYDIR))
-                tmp_job.write("cd %s\n"%(MYDIR))
-                tmp_job.write("source env.sh\n")
-                tmp_job.write("cd ../\n")
-                tmp_job.write("python RateEstimate.py -n %s -d %s\n"%(str(i),dataset))
-                tmp_job.write("\n")
-                tmp_job.close()
-                os.system("chmod +x %s"%(MYDIR+'/'+tmp_dir+'/sub_job/'+tmp_jobname))
-                os.system("bsub -q 1nh -eo %s/sub_err/err_%s_%s.dat -oo %s/sub_out/out_%s_%s.dat %s"%(tmp_dir,dataset,str(i),tmp_dir,dataset,str(i),MYDIR+'/'+tmp_dir+'/sub_job/'+tmp_jobname))
-            except:
-                pass
+
+            tmp_jobname="submit_%s_%s.jobb"%(dataset,str(i))
+            tmp_job=open(MYDIR+'/'+tmp_dir+'/sub_job/'+tmp_jobname,'w')
+            tmp_job.write("curr_dir=%s\n"%(MYDIR))
+            tmp_job.write("cd %s\n"%(MYDIR))
+            tmp_job.write("source env.sh\n")
+            tmp_job.write("cd ../\n")
+            tmp_job.write("python RateEstimate.py -d %s -f %s\n"%(dataset, filedic[dataset][i-1]))
+            tmp_job.write("\n")
+            tmp_job.close()
+            tmp_job_dir = MYDIR+'/'+tmp_dir+'/sub_job/'+tmp_jobname
+            os.system("chmod +x %s"%(tmp_job_dir))
+            #os.system("bsub -q 1nh -eo %s/sub_err/err_%s_%s.dat -oo %s/sub_out/out_%s_%s.dat %s"%(tmp_dir,dataset,str(i),tmp_dir,dataset,str(i),MYDIR+'/'+tmp_dir+'/sub_job/'+tmp_jobname))
+
+            k+=1
+            tmp_text = tmp_text + tmp_job_dir + "\n"
+            if k % loop_mark == 0 or i == numdic[dataset]:
+                Tjobsname = "sub_%s_%s_%s.jobb"%(dataset, pre_k, k)
+                Tjob_dir = MYDIR+'/'+tmp_dir+'/sub_job2/'+Tjobsname
+                Tjob = open(Tjob_dir,"w")
+                Tjob.write("%s"%(tmp_text))
+                os.system("chmod +x %s"%(Tjob_dir))
+                sub_str = "bsub -q 1nh -eo %s/sub_err/err_%s_%s.dat -oo %s/sub_out/out_%s_%s.dat %s"%(tmp_dir,dataset,k,tmp_dir,dataset,k,Tjob_dir)
+                local_str = "%s"%(Tjob_dir)
+                #os.system(sub_str)
+                sub_total.write("%s\n"%(sub_str))
+                local_total.write("%s\n"%(local_str))
+                pre_k = k
+                tmp_text = ''
             j+=1
+    os.system("chmod +x sub_total.jobb")
+    os.system("chmod +x local_total.jobb")
 
 
 datasetList+=datasetEMEnrichedList
 datasetList+=datasetMuEnrichedList
 
-numdic,my_sum=getsubdic(datasetList)
-subpu(0,100,datasetList,numdic,my_sum)
+filedic,my_sum=getsubdic(datasetList)
+#print my_sum
+subpu(0,100,datasetList,filedic,my_sum,5)
