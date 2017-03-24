@@ -156,7 +156,7 @@ def subpu(minPU,maxPU,datasetList,filedic,my_sum,loop_mark = 5):
             tmp_job.write("cd %s\n"%(MYDIR))
             tmp_job.write("source env.sh\n")
             tmp_job.write("cd ../\n")
-            tmp_job.write("python RateEstimate.py -d %s -f %s\n"%(dataset, filedic[dataset][i-1]))
+            tmp_job.write("python RateEstimate.py -n %s -d %s -f %s\n"%(str(i),dataset, filedic[dataset][i-1]))
             tmp_job.write("\n")
             tmp_job.close()
             tmp_job_dir = MYDIR+'/'+tmp_dir+'/sub_job/'+tmp_jobname
