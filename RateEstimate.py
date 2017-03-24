@@ -11,7 +11,7 @@ from scripts.input_card import *
 from optparse import OptionParser
 parser=OptionParser()
 
-parser.add_option("-n","--number",dest="fileNumber",default="-1",type="int") # python file.py -n N => options.fileNumber is N
+parser.add_option("-n","--number",dest="fileNumber",default=-1,type="int") # python file.py -n N => options.fileNumber is N
 parser.add_option("-d","--dataset",dest="datasetName",default="all",type="str")
 parser.add_option("-f","--name",dest="fileName",default="null",type="str")
 
