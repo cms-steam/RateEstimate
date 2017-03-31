@@ -976,7 +976,7 @@ prescaleList = getPrescaleListInNtuples()
 ## loop on dataset and fill matrix with event counts, rates, and squared errors
 for dataset in datasetList:
     if options.fileName =="null": 
-        if options.datasetName=="all"
+        if options.datasetName=="all":
             fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,passedEventsMatrix_Core,WeightedErrorMatrix_Core,rateTriggerDataset,squaredErrorRateTriggerDataset)
         elif dataset==options.datasetName:
             fillMatrixAndRates(dataset,totalEventsMatrix,totalLSMatrix,passedEventsMatrix,WeightedErrorMatrix,passedEventsMatrix_Pure,WeightedErrorMatrix_Pure,passedEventsMatrix_Core,WeightedErrorMatrix_Core,rateTriggerDataset,squaredErrorRateTriggerDataset)
