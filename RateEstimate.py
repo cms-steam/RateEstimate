@@ -3,7 +3,7 @@
 
 ########## Configuration #####################################################################
 from triggersGroupMap.HLT_Menu_v4p2_v6 import *
-from datasetCrossSections.datasetCrossSectionsSummer16 import *
+from datasetCrossSections.datasetCrossSectionsHLTPhysics import *
 from scripts.input_card import *
 
 ##### Adding an option to the code #####
@@ -44,12 +44,12 @@ evalExclusive_group = False	# evaluate exclusive group rates
 
 use_json = False
 json_file_name = '/afs/cern.ch/user/x/xgao/work/RateEstimate_16_12_2016/L1_accept/json_columns/PU_45to50_v4.2.2_PS_1.45e34.json'
-label = "MC"         # name of the output files
-runNo = "0"           #if runNo='0', means code will run for all Run.
-LS_min = '0'
-LS_max = '9999'            #default is 9999
+label = "Data"         # name of the output files
+runNo = "284035"           #if runNo='0', means code will run for all Run.
+LS_min = '1'
+LS_max = '73'            #default is 9999
 
-isData = False
+isData = True
 ## log level
 log = 2                     # use log=2
 ###############################################################################################
@@ -400,7 +400,7 @@ def writeMatrixRates(fileName,prescaleList,datasetList,rateTriggerDataset,rateTr
     f.close()
     
 ## compare the trigger list from the ntuple and from triggersGroupMap*.py and print the difference
-def CompareGRunVsGoogleDoc(datasetList,triggerList):
+def CompareGRunVsGoogleDoc(datasetList,triggerList,isPrint = False):
     # take the first "hltbit" file
     local_run = True
     filenames = []
@@ -443,14 +443,15 @@ def CompareGRunVsGoogleDoc(datasetList,triggerList):
 
     diffTriggersGRun.sort()
     diffTriggersGoogle.sort()
-    print 
-    print '#'*30,"Triggers only in GRun:",'#'*30
-    for t in diffTriggersGRun:
-        print t
-    print 
-    print '#'*30,"Triggers only in Google doc:",'#'*30
-    for t in diffTriggersGoogle:
-        print t
+    if(isPrint):
+        print 
+        print '#'*30,"Triggers only in GRun:",'#'*30
+        for t in diffTriggersGRun:
+            print t
+        print 
+        print '#'*30,"Triggers only in Google doc:",'#'*30
+        for t in diffTriggersGoogle:
+            print t
 
     for trigger in triggerList:
         if trigger in diffTriggersGoogle: triggerList.remove(trigger)
@@ -493,11 +494,11 @@ def getEvents(input_):
             i = 0
             root_alias_dic = {}
             for leaf in tree.GetListOfLeaves():
-                triggerName = leaf.GetName()
-                if (triggerName in triggerList):
-                    tree.SetAlias("T_"+str(i),triggerName)
-                    if not triggerName in root_alias_dic:
-                        root_alias_dic[triggerName] = "T_"+str(i)
+                TriggerName = leaf.GetName()
+                if (TriggerName in triggerList):
+                    tree.SetAlias("T_"+str(i),TriggerName)
+                    if not TriggerName in root_alias_dic:
+                        root_alias_dic[TriggerName] = "T_"+str(i)
                     i += 1
     
             getTriggerString1={}
@@ -512,14 +513,14 @@ def getEvents(input_):
                         if getTriggerString1[group]!='0': getTriggerString1[group] += '||'+triggerAlias
                         else: getTriggerString1[group] = triggerAlias
     
-            for dataset in primaryDatasetList:
-                datasetPathList = getTriggerString1[dataset].split('||')
-                getTriggerString1[dataset] = '0'
+            for Dataset in primaryDatasetList:
+                datasetPathList = getTriggerString1[Dataset].split('||')
+                getTriggerString1[Dataset] = '0'
                 for triggerPath in datasetPathList:
                     if triggerPath in triggerList:
                         triggerAlias = root_alias_dic[triggerPath]
-                        if getTriggerString1[dataset]!='0': getTriggerString1[dataset] += '||'+triggerAlias
-                        else: getTriggerString1[dataset] = triggerAlias
+                        if getTriggerString1[Dataset]!='0': getTriggerString1[Dataset] += '||'+triggerAlias
+                        else: getTriggerString1[Dataset] = triggerAlias
 
             for stream in streamList:
                 streamPathList = getTriggerString1[stream].split('||')
@@ -548,8 +549,27 @@ def getEvents(input_):
                 for trigger in triggerAndGroupList:
                     passedEventsMatrix_[trigger] = tree.Draw("",'('+getTriggerString1[trigger]+')&&('+filterString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
                     if withNegativeWeights: passedEventsMatrix_[trigger] = passedEventsMatrix_[trigger] - 2*tree.Draw("",'(MCWeightSign<0)&&('+getTriggerString1[trigger]+')&&('+filterString+')&&(NPUTrueBX0<='+str(pileupMAX)+')&&(NPUTrueBX0>='+str(pileupMIN)+')')
-            _file0.Close()
-            totalLSMatrix_ = 0 
+
+            # if is data, calculate number of Lumi Section processed
+            if (isData and tree!=None):
+                print "%s is data, try to get nLS %s"%("#"*20,"#"*20)
+                n_processed = 0
+                Total_LS = 0
+                N = tree.GetEntries()
+                for event in tree:
+                    if n_processed%(N/5)==0: print "\r{0:.1f} %".format(100*float(n_processed)/float(N))
+                    n_processed += 1
+                    if (int(runNo) != 0) and int(getattr(event,'Run')) != int(runNo):continue
+                    if (int(runNo) != 0) and (int(getattr(event,'LumiBlock')) < int(LS_min) or int(getattr(event,'LumiBlock')) > int(LS_max)):continue
+                    runnr = int(getattr(event,'Run'))
+                    runls = int(getattr(event,'LumiBlock'))
+                    runstr = str((dataset,runnr,runls))
+                    if not runstr in runlist:
+                        runlist.append(runstr)
+                        Total_LS += 1
+                totalLSMatrix_ = Total_LS
+    
+                _file0.Close()
         else:  #if tree is not undefined/empty set enties to zero
             totalEventsMatrix_ = 0
             totalLSMatrix_ = 0 
@@ -884,6 +904,7 @@ datasetList+=datasetMuEnrichedList
 
 ## print a log
 print
+print "is Data:",isData
 print "Using up to ", multiprocess ," processes."
 print "Folder list: "
 for folder in folder_list:
